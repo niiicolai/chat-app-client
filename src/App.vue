@@ -1,85 +1,40 @@
 <script setup lang="ts">
 import { RouterLink, RouterView } from 'vue-router'
-import HelloWorld from './components/HelloWorld.vue'
+import Toast from '@/components/Toast.vue'
+
+import { useToast } from '@/composables/useToast.js'
+import { useUser } from '@/composables/useUser.js'
+import router from '@/router';
+
+const publicRoutes = ['login', 'register']
+
+router.beforeEach((to, from, next) => {
+  const toastCtrl = useToast()
+  const userCtrl = useUser()
+  if (!userCtrl.isLoggedIn && !publicRoutes.includes(to.name)) {
+    toastCtrl.add('Please login to continue', 'error')
+    next({ name: 'login' })
+  } else {
+    next()
+  }
+})
 </script>
 
 <template>
-  <header>
-    <img alt="Vue logo" class="logo" src="@/assets/logo.svg" width="125" height="125" />
+  <Toast />
 
-    <div class="wrapper">
-      <HelloWorld msg="You did it!" />
-
-      <nav>
+  <header class="bg-gray-800 text-white p-3 flex items-center justify-between gap-3">
+    <div>
+      <nav class="flex gap-3">
         <RouterLink to="/">Home</RouterLink>
-        <RouterLink to="/about">About</RouterLink>
+        
       </nav>
+    </div>
+    <div class="flex gap-3">
+      <RouterLink to="/login">Login</RouterLink>
+      <RouterLink to="/register">Register</RouterLink>
     </div>
   </header>
 
   <RouterView />
 </template>
-
-<style scoped>
-header {
-  line-height: 1.5;
-  max-height: 100vh;
-}
-
-.logo {
-  display: block;
-  margin: 0 auto 2rem;
-}
-
-nav {
-  width: 100%;
-  font-size: 12px;
-  text-align: center;
-  margin-top: 2rem;
-}
-
-nav a.router-link-exact-active {
-  color: var(--color-text);
-}
-
-nav a.router-link-exact-active:hover {
-  background-color: transparent;
-}
-
-nav a {
-  display: inline-block;
-  padding: 0 1rem;
-  border-left: 1px solid var(--color-border);
-}
-
-nav a:first-of-type {
-  border: 0;
-}
-
-@media (min-width: 1024px) {
-  header {
-    display: flex;
-    place-items: center;
-    padding-right: calc(var(--section-gap) / 2);
-  }
-
-  .logo {
-    margin: 0 2rem 0 0;
-  }
-
-  header .wrapper {
-    display: flex;
-    place-items: flex-start;
-    flex-wrap: wrap;
-  }
-
-  nav {
-    text-align: left;
-    margin-left: -1rem;
-    font-size: 1rem;
-
-    padding: 1rem 0;
-    margin-top: 1rem;
-  }
-}
-</style>

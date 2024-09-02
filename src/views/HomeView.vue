@@ -1,9 +1,17 @@
 <script setup lang="ts">
-import TheWelcome from '../components/TheWelcome.vue'
+import Content from '@/components/Content.vue';
+import { useRoom } from '@/composables/useRoom.js'
+import { ref, onMounted } from 'vue'
+
+const roomCtrl = useRoom()
+const rooms = ref([])
+onMounted(async () => {
+  rooms.value = await roomCtrl._findAll()
+})
 </script>
 
 <template>
-  <main>
-    <TheWelcome />
-  </main>
+  <Content>
+    home
+  </Content>
 </template>
