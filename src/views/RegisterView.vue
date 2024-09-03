@@ -28,7 +28,7 @@ const register = async () => {
     }
 
     try {
-        await userCtrl._create({
+        await userCtrl.create({
             username: username.value,
             email: email.value,
             password: password.value

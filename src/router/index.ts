@@ -18,6 +18,11 @@ const router = createRouter({
       name: 'register',
       component: () => import('../views/RegisterView.vue')
     },
+    {
+      path: '/join_room/:uuid',
+      name: 'join_room',
+      component: () => import('../views/JoinRoomView.vue')
+    },
   ]
 })
 

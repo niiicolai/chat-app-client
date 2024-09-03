@@ -21,8 +21,10 @@ export function useAPI() {
             }
         );
         if (!response.ok) {
-            if (debug) console.error(response);
-            throw new Error(response.statusText);
+            const res = await response.json();
+            const msg = `Error: ${res.error || response.statusText}`;            
+            if (debug) console.error(msg);
+            throw new Error(msg);
         }
 
         const json = await response.json();
@@ -44,56 +46,66 @@ export function useAPI() {
 
     // Build a CRUD API
     const crudAPI = (singular, plural, auth={
-        _findAll: true,
-        _findOne: true,
-        _new: false,
-        _create: true,
-        _update: true,
-        _delete: true
+        findAll: true,
+        findOne: true,
+        template: false,
+        create: true,
+        update: true,
+        delete: true
     }) => {
         const api = {}
 
-        api._findAll = async (page = 1, limit = 10) => {
-            return fetchAPI(`/${plural}?page=${page}&limit=${limit}`,
+        api.findAll = async (options={}) => {
+            let url = `/${plural}`;
+            
+            const keys = Object.keys(options);
+            if (keys.length > 0) {
+                url += '?';
+                keys.forEach((key, index) => {
+                    url += `${key}=${options[key]}${index < keys.length - 1 ? '&' : ''}`;
+                });
+            }
+
+            return fetchAPI(url,
                 { method: 'GET' },
-                auth._findAll
+                auth.findAll
             );
         };
 
-        api._findOne = async (id) => {
+        api.findOne = async (id) => {
             return fetchAPI(`/${singular}/${id}`,
                 { method: 'GET' },
-                auth._findOne
+                auth.findOne
             );
         };
 
-        api._new = async () => {
+        api.template = async () => {
             return fetchAPI(`/${singular}/new`,
                 { method: 'GET' },
-                auth._new
+                auth.template
             );
         };
 
-        api._create = async (data) => {
+        api.create = async (data) => {
             data.uuid = uuidv4();
 
             return fetchAPI(`/${singular}`,
                 { method: 'POST', body: JSON.stringify(data) },
-                auth._create
+                auth.create
             );
         };
 
-        api._update = async (id, data) => {
+        api.update = async (id, data) => {
             return fetchAPI(`/${singular}/${id}`,
-                { method: 'PUT', body: JSON.stringify(data) },
-                auth._update
+                { method: 'PATCH', body: JSON.stringify(data) },
+                auth.update
             );
         }
 
-        api._delete = async (id) => {
+        api.delete = async (id) => {
             return fetchAPI(`/${singular}/${id}`,
                 { method: 'DELETE' },
-                auth._delete
+                auth.delete
             );
         }
 
