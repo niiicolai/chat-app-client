@@ -20,9 +20,10 @@ export function useChannelSelector() {
 
         const { data: roomChannelsData } = await channelCtrl
             .findAll({ page: 1, limit: 10, room_uuid: newRoom.uuid })
-
-        channels.value = roomChannelsData
-        setChannel(roomChannelsData.length > 0 ? roomChannelsData[0] : null)
+        const sortedByType = roomChannelsData.sort((a, b) => a.channel_type_name.localeCompare(b.channel_type_name))
+        
+        channels.value = sortedByType
+        setChannel(sortedByType.length > 0 ? sortedByType[0] : null)
     }
 
     async function setChannel(newChannel) {
@@ -42,6 +43,12 @@ export function useChannelSelector() {
         }
     }
 
+    async function reinitChannelMessages() {
+        if (channel.value) {
+            setChannelMessages(channel.value)
+        }
+    }
+
     async function setChannelMessages(newChannel) {
         if (!newChannel || !newChannel.uuid) {
             channelMessages.value = []
@@ -51,7 +58,7 @@ export function useChannelSelector() {
         const { data: channelMessagesData } = await channelCtrl.messages.findAll({
             page: 1, limit: 10, channel_uuid: newChannel.uuid
         })
-        channelMessages.value = channelMessagesData
+        channelMessages.value = channelMessagesData.reverse()
     }
 
     return {
@@ -61,6 +68,7 @@ export function useChannelSelector() {
         channels,
         setChannel,
         setChannelMessages,
+        reinitChannelMessages,
         setRoom
     }
 }

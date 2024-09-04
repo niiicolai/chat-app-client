@@ -10,9 +10,10 @@ const userCtrl = useUser()
 
 const rooms = ref(null)
 const room = ref(null)
-const inviteLinks = ref([])
 const userRooms = ref([])
 const userRoom = ref(null)
+const inviteLinks = ref([])
+const displayLinks = ref(false)
 
 export function useRoomSelector() {
     async function fetchRooms() {
@@ -58,6 +59,12 @@ export function useRoomSelector() {
         userRoom.value = userRoomsData.find(userRoom => userRoom.user_uuid === sub)
     }
 
+    async function reinitInviteLinks() {
+        if (room.value) {
+            setInviteLinks(room.value)
+        }
+    }
+
     async function setInviteLinks(newRoom) {
         if (!newRoom || !newRoom.uuid) {
             inviteLinks.value = []
@@ -76,6 +83,10 @@ export function useRoomSelector() {
         return userRoom.value.room_role_name === role
     }
 
+    const toggleDisplayLinks = () => {
+        displayLinks.value = !displayLinks.value
+    }
+
     return {
         room,
         rooms,
@@ -86,6 +97,9 @@ export function useRoomSelector() {
         setInviteLinks,
         setUserRooms,
         hasRole,
-        fetchRooms
+        fetchRooms,
+        reinitInviteLinks,
+        displayLinks,
+        toggleDisplayLinks
     }
 }

@@ -15,7 +15,7 @@ const styling = {
 </script>
 
 <template>
-    <div class="fixed top-3 right-3">
+    <div class="fixed top-3 right-3" style="z-index: 10000;">
         <div v-for="toast in toasts" :class="styling[toast.type]" class="p-3 text-sm rounded-md shadow-lg mb-3" :key="toast.id">
             <p>{{ toast.message }}</p>
         </div>

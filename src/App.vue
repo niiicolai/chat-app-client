@@ -17,7 +17,7 @@ const roomTypesCtrl = useRoomTypes()
 router.beforeEach((to, from, next) => {
   const toastCtrl = useToast()
   
-  if (!userCtrl.isLoggedIn && !publicRoutes.includes(to.name)) {
+  if (!userCtrl.isLoggedIn() && !publicRoutes.includes(to.name)) {
     toastCtrl.add('Please login to continue', 'error')
     next({ name: 'login' })
   } else {
@@ -33,20 +33,5 @@ onMounted(async () => {
 
 <template>
   <Toast />
-
-  <header class="bg-gray-800 text-white p-3 flex items-center justify-between gap-3">
-    <div>
-      <nav class="flex gap-3">
-        <RouterLink to="/">Home</RouterLink>
-        
-      </nav>
-    </div>
-    <div class="flex gap-3">
-      <RouterLink v-if="!userCtrl.isLoggedIn" to="/login">Login</RouterLink>
-      <RouterLink v-if="!userCtrl.isLoggedIn" to="/register">Register</RouterLink>
-      <RouterLink v-if="userCtrl.isLoggedIn" to="/room/new">New Room</RouterLink>
-    </div>
-  </header>
-
   <RouterView />
 </template>
