@@ -11,24 +11,30 @@ export function useRoom() {
         delete: true
     });
 
-    const roles = { ...api.crudAPI('room_role', 'room_roles', {
-        findAll: false,
-        findOne: false,
-    }) };
+    const roles = {
+        ...api.crudAPI('room_role', 'room_roles', {
+            findAll: false,
+            findOne: false,
+        })
+    };
 
-    const categories = { ...api.crudAPI('room_category', 'room_categories', {
-        findAll: false,
-        findOne: false,
-    }) };
+    const categories = {
+        ...api.crudAPI('room_category', 'room_categories', {
+            findAll: false,
+            findOne: false,
+        })
+    };
 
-    const inviteLinks = { ...api.crudAPI('room_invite_link', 'room_invite_links', {
-        findAll: true,
-        findOne: false,
-        template: false,
-        create: true,
-        update: true,
-        delete: true
-    }) };
+    const inviteLinks = {
+        ...api.crudAPI('room_invite_link', 'room_invite_links', {
+            findAll: true,
+            findOne: false,
+            template: false,
+            create: true,
+            update: true,
+            delete: true
+        })
+    };
     inviteLinks.join = async (uuid) => {
         if (!uuid) {
             throw new Error('uuid are required');
@@ -40,20 +46,22 @@ export function useRoom() {
         );
     };
 
-    const userRooms = { ...api.crudAPI('user_room', 'user_rooms', {
-        findAll: true,
-        findOne: true,
-        template: false,
-        create: true,
-        update: true,
-        delete: true
-    }) };
+    const userRooms = {
+        ...api.crudAPI('user_room', 'user_rooms', {
+            findAll: true,
+            findOne: true,
+            template: false,
+            create: true,
+            update: true,
+            delete: true
+        })
+    };
 
     return {
         ...crudAPI,
         roles,
         categories,
         inviteLinks,
-        userRooms
+        userRooms,
     };
 }

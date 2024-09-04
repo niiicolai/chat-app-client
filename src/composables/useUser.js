@@ -30,10 +30,15 @@ export function useUser() {
         return !!api.getToken();
     }
 
+    const getSub = () => {
+        return api.getToken() ? JSON.parse(atob(api.getToken().split('.')[1])).sub : null;
+    }
+
     return {
         ...crudAPI,
         login,
         logout,
-        isLoggedIn
+        isLoggedIn,
+        getSub
     };
 }

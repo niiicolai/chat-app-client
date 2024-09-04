@@ -44,6 +44,6 @@ export function useChannel() {
         types,
         messages,
         messageUploads,
-        uploadTypes
+        uploadTypes,
     };
 }
