@@ -22,6 +22,13 @@ export function useUser() {
         );
     };
 
+    const me = async () => {
+        return api.fetchAPI('/me',
+            { method: 'GET' },
+            true
+        );
+    }
+
     const logout = async () => {
         api.removeToken();
     }
@@ -39,6 +46,7 @@ export function useUser() {
         login,
         logout,
         isLoggedIn,
+        me,
         getSub
     };
 }

@@ -6,6 +6,7 @@ const channelCtrl = useChannel()
 const channel = ref(null)
 const channelMessages = ref([])
 const channels = ref([])
+const onSetChannelCallbacks = ref([])
 
 export function useChannelSelector() {
     async function setRoom(newRoom) {
@@ -34,18 +35,23 @@ export function useChannelSelector() {
         }
 
         channel.value = await channelCtrl.findOne(newChannel.uuid)
-        setChannelMessages(newChannel)
+        await setChannelMessages(newChannel)
+        onSetChannelCallbacks.value.forEach(cb => cb(newChannel))
+    }
+
+    function onSetChannel(cb) {
+        onSetChannelCallbacks.value.push(cb)
     }
 
     async function reinit() {
         if (room.value) {
-            setRoom(room.value)
+            await setRoom(room.value)
         }
     }
 
     async function reinitChannelMessages() {
         if (channel.value) {
-            setChannelMessages(channel.value)
+            await setChannelMessages(channel.value)
         }
     }
 
@@ -69,6 +75,7 @@ export function useChannelSelector() {
         setChannel,
         setChannelMessages,
         reinitChannelMessages,
+        onSetChannel,
         setRoom
     }
 }

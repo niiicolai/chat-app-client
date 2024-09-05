@@ -57,11 +57,18 @@ export function useRoom() {
         })
     };
 
+    const roomSettings = {
+        ...api.crudAPI('room_setting', 'room_settings', {
+            update: true,
+        })
+    };
+
     return {
         ...crudAPI,
         roles,
         categories,
         inviteLinks,
         userRooms,
+        roomSettings
     };
 }

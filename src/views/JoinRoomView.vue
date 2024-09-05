@@ -49,6 +49,16 @@ onMounted(async () => {
 
                         Welcome to {{ result.room.name }} !
                     </div>
+
+                    <div v-if="result.room.avatar_src" class="w-72 mb-3 text-center rounded-md p-3 bg-slate-500 mb-3"
+                        :style="{ 
+                            backgroundImage: `url(${result.room.avatar_src})`,
+                            backgroundSize: 'cover',
+                            backgroundPosition: 'center' 
+                        }">
+                    >
+                    </div>
+
                     <div class="w-72 mb-3 text-center rounded-md p-3 bg-slate-500 mb-3">
                         {{ result.room.description }}
                     </div>

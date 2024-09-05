@@ -4,7 +4,10 @@ import { useUser } from '@/composables/useUser.js'
 import { useToast } from '@/composables/useToast.js'
 import router from '@/router';
 import { ref } from 'vue'
+import { v4 as uuidv4 } from 'uuid'
 
+const formRef = ref(null)
+const uuid = ref(uuidv4())
 const username = ref('')
 const email = ref('')
 const password = ref('')
@@ -28,16 +31,15 @@ const register = async () => {
     }
 
     try {
-        await userCtrl.create({
-            username: username.value,
-            email: email.value,
-            password: password.value
-        })
+        await userCtrl.create({}, formRef.value)
 
         router.push({ name: 'home' })
     } catch (error) {
+        uuid.value = uuidv4()
         toastCtrl.add(error, 'error')
     }
+
+    uuid.value = uuidv4()
 }
 </script>
 
@@ -60,24 +62,31 @@ const register = async () => {
                     make new friends, your journey starts with a single click. Welcome aboard!
                 </div>
 
-                <form @submit.prevent="register">
+                <form @submit.prevent="register" ref="formRef">
+                    <input type="hidden" v-model="uuid" name="uuid" />
 
                     <div class="mb-3 flex items-center gap-6">
-                        <label for="username" class="block mb-1 w-36">Username</label>
-                        <input id="username" type="text" v-model="username"
+                        <label for="username" class="block w-36">Username</label>
+                        <input id="username" type="text" v-model="username" name="username"
                             class="w-full border p-3 rounded-md text-black text-sm" />
                     </div>
 
                     <div class="mb-3 flex items-center gap-6">
-                        <label for="email" class="block mb-1 w-36">Email</label>
-                        <input id="email" type="email" v-model="email"
+                        <label for="email" class="block w-36">Email</label>
+                        <input id="email" type="email" v-model="email" name="email"
                             class="w-full border p-3 rounded-md text-black text-sm" />
+                    </div>
+
+                    <div class="mb-3 flex items-center gap-6">
+                        <label for="password" class="block w-36">Password</label>
+                        <input id="password" type="password" v-model="password" name="password"
+                            class="border p-3 rounded-md text-black text-sm w-full" />
                     </div>
 
                     <div class="mb-6 flex items-center gap-6">
-                        <label for="password" class="block mb-1 w-36">Password</label>
-                        <input id="password" type="password" v-model="password"
-                            class="border p-3 rounded-md text-black text-sm w-full" />
+                        <label for="description" class="block w-36">Avatar</label>
+                        <input type="file" placeholder="avatar" name="file"
+                            class="w-full p-2 border border-gray-300 rounded-md text-white" />
                     </div>
 
                     <button type="submit"

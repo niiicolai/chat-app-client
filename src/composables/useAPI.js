@@ -86,8 +86,33 @@ export function useAPI() {
             );
         };
 
-        api.create = async (data) => {
+        api.create = async (data, form=null) => {
             data.uuid = uuidv4();
+
+            if (form) {
+                const formData = new FormData(form);
+                const API_URL = import.meta.env.VITE_API_URL;
+                const token = localStorage.getItem(import.meta.env.VITE_API_LOCAL_STORAGE_KEY);
+                const response = await fetch(`${API_URL}/${singular}`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                    },
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    const res = await response.json();
+                    const msg = `Error: ${res.error || response.statusText}`;
+                    if (debug) console.error(msg);
+                    throw new Error(msg);
+                }
+                const json = await response.json();
+                if (json.token) {
+                    localStorage.setItem(localStorageKey, json.token);
+                }
+                return json;
+            }
 
             return fetchAPI(`/${singular}`,
                 { method: 'POST', body: JSON.stringify(data) },
@@ -95,7 +120,28 @@ export function useAPI() {
             );
         };
 
-        api.update = async (id, data) => {
+        api.update = async (id, data, form=null) => {
+            if (form) {
+                const formData = new FormData(form);
+                const API_URL = import.meta.env.VITE_API_URL;
+                const token = localStorage.getItem(import.meta.env.VITE_API_LOCAL_STORAGE_KEY);
+                const response = await fetch(`${API_URL}/${singular}/${id}`, {
+                    method: 'PATCH',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                    },
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    const res = await response.json();
+                    const msg = `Error: ${res.error || response.statusText}`;
+                    if (debug) console.error(msg);
+                    throw new Error(msg);
+                }
+                return await response.json();
+            }
+
             return fetchAPI(`/${singular}/${id}`,
                 { method: 'PATCH', body: JSON.stringify(data) },
                 auth.update
