@@ -208,7 +208,7 @@ const updateRoomSettings = async () => {
 
     toastCtrl.add('Room settings updated', 'success')
 
-    editRoomSettings = null
+    editRoomSettings.value = null
     roomSelector.fetchRooms()
 }
 
