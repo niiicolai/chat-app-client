@@ -121,14 +121,14 @@ const copyLink = (link) => {
                                 Create Link
                             </button>
                         </div>
-                        <div v-else>
+                        <div v-else class="flex gap-3">
                             <input v-model="editLinkExpiresAt" :placeholder="editLink.expires_at"
-                                class="p-2 m-2 border border-gray-300" type="datetime-local" />
-                            <button @click="updateLink()" class="p-2 m-2 bg-blue-500 text-white">
+                            class="w-full text-black rounded-md p-2 border border-gray-300" type="datetime-local" />
+                            <button @click="updateLink()" class="p-2 bg-indigo-500 hover:bg-indigo-600 rounded-md text-white">
                                 Update Link
                             </button>
 
-                            <button @click="editLink = null" class="p-2 m-2 bg-blue-500 text-white">
+                            <button @click="editLink = null" class="p-2 bg-slate-500 hover:bg-slate-600 rounded-md text-white">
                                 Cancel
                             </button>
                         </div>
