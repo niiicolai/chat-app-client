@@ -37,7 +37,7 @@ onMounted(async () => {
 </script>
 
 <template>
-    <div class="bg-black w-full border-b border-gray-800 p-3 h-20 overflow-hidden" v-if="userRooms.length > 0">
+    <div class="bg-black w-full border-b border-gray-800 p-3 h-20 overflow-hidden" v-if="userRooms && userRooms.length > 0">
         <div v-if="channel" class="text-white text-xs mb-1 overflow-hidden truncate ...">
             {{ channel.description }}
         </div>

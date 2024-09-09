@@ -1,12 +1,14 @@
 import { ref } from 'vue'
 import { useChannel } from './useChannel.js'
+import { useWebsocket } from './useWebsocket.js'
 
-const room = ref(null)
 const channelCtrl = useChannel()
+const room = ref(null)
 const channel = ref(null)
 const channelMessages = ref([])
 const channels = ref([])
 const onSetChannelCallbacks = ref([])
+const websocket = useWebsocket()
 
 export function useChannelSelector() {
     async function setRoom(newRoom) {
@@ -21,19 +23,26 @@ export function useChannelSelector() {
 
         const { data: roomChannelsData } = await channelCtrl
             .findAll({ page: 1, limit: 10, room_uuid: newRoom.uuid })
+        if (!roomChannelsData) {
+            channels.value = []
+            setChannel(null)
+            return
+        }
         const sortedByType = roomChannelsData.sort((a, b) => a.channel_type_name.localeCompare(b.channel_type_name))
         
         channels.value = sortedByType
-        setChannel(sortedByType.length > 0 ? sortedByType[0] : null)
+        setChannel(sortedByType.length > 0 ? roomChannelsData[0] : null)
     }
 
     async function setChannel(newChannel) {
         if (!newChannel || !newChannel.uuid) {
             channel.value = null
             channelMessages.value = []
+            websocket.leaveChannel()
             return
         }
 
+        websocket.joinChannel('channel-' + newChannel.uuid)
         channel.value = await channelCtrl.findOne(newChannel.uuid)
         await setChannelMessages(newChannel)
         onSetChannelCallbacks.value.forEach(cb => cb(newChannel))

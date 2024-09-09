@@ -26,13 +26,23 @@ export function useChannel() {
     }) };
 
     const messageUploads = { ...api.crudAPI('message_upload', 'message_uploads', {
-        findAll: false,
-        findOne: false,
+        findAll: true,
+        findOne: true,
         template: false,
         create: true,
         update: true,
         delete: true
     }) };
+    messageUploads.bytesUsed = async (room_uuid) => {
+        if (!room_uuid) {
+            throw new Error('room_uuid are required');
+        }
+
+        return api.fetchAPI(`/bytes_used/${room_uuid}`,
+            { method: 'GET' },
+            true
+        );
+    };
 
     const uploadTypes = { ...api.crudAPI('upload_type', 'upload_types', {
         findAll: false,

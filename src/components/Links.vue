@@ -22,15 +22,19 @@ const isAdmin = computed(() => {
 })
 
 const linkExpiresAt = ref('')
+const neverExpires = ref(false)
 const editLink = ref(null)
 
 const startEditLink = (link) => {
     editLink.value = link
+   
+    editNeverExpires.value = link.expires_at === null
 }
 
 const editLinkExpiresAt = ref('')
+const editNeverExpires = ref(false)
 const updateLink = async () => {
-    if (!editLinkExpiresAt.value) {
+    if (!editLinkExpiresAt.value && !editNeverExpires.value) {
         return toastCtrl.add('Expires At is required', 'error')
     }
     if (!editLink.value) {
@@ -39,7 +43,7 @@ const updateLink = async () => {
 
     try {
         await roomCtrl.inviteLinks.update(editLink.value.uuid, {
-            expires_at: editLinkExpiresAt.value
+            expires_at: editNeverExpires.value ? null : editLinkExpiresAt.value
         })
     } catch (error) {
         toastCtrl.add(error.message, 'error')
@@ -52,12 +56,12 @@ const updateLink = async () => {
 }
 
 const createLink = async () => {
-    if (!linkExpiresAt.value) {
+    if (!linkExpiresAt.value && !neverExpires.value) {
         return toastCtrl.add('Expires At is required', 'error')
     }
 
     const room_uuid = roomSelector.room.value.uuid
-    const expires_at = linkExpiresAt.value
+    const expires_at = neverExpires.value ? null : linkExpiresAt.value;
     try {
         await roomCtrl.inviteLinks.create({ room_uuid, expires_at })
     } catch (error) {
@@ -112,23 +116,38 @@ const copyLink = (link) => {
 
                 <div class=" mb-3">
                     <div v-if="isAdmin">
-                        <div v-if="!editLink" class="flex gap-3">
-                            <input v-model="linkExpiresAt" placeholder="Expires At"
-                                class="w-full text-black rounded-md p-2 border border-gray-300" type="datetime-local" />
+                        <div v-if="!editLink" class="flex flex-col gap-3">
+                            <div class="flex gap-3">
+                                <label for="never_expires" class="block">Never</label>
+                                <input v-model="neverExpires" name="never_expires" type="checkbox" class="w-6 h-6" />
+                            </div>
+                            <div class="flex gap-3">
+                                <input v-model="linkExpiresAt" placeholder="Expires At"
+                                    class="w-full text-black rounded-md p-2 border border-gray-300"
+                                    type="datetime-local" />
 
-                            <button @click="createLink()"
-                                class="p-2 mr-2 bg-indigo-500 hover:bg-indigo-600 rounded-md text-white">
-                                Create Link
-                            </button>
+                                <button @click="createLink()"
+                                    class="p-2 mr-2 bg-indigo-500 hover:bg-indigo-600 rounded-md text-white">
+                                    Create Link
+                                </button>
+                            </div>
                         </div>
-                        <div v-else class="flex gap-3">
-                            <input v-model="editLinkExpiresAt" :placeholder="editLink.expires_at"
-                            class="w-full text-black rounded-md p-2 border border-gray-300" type="datetime-local" />
-                            <button @click="updateLink()" class="p-2 bg-indigo-500 hover:bg-indigo-600 rounded-md text-white">
-                                Update Link
-                            </button>
+                        <div v-else class="flex flex-col gap-3">
+                            <div class="flex gap-3">
+                                <label for="never_expires" class="block">Never</label>
+                                <input v-model="editNeverExpires" name="never_expires" type="checkbox" class="w-6 h-6" />
+                            </div>
+                            <div class="flex gap-3">
+                                <input v-model="editLinkExpiresAt" :placeholder="editLink.expires_at"
+                                    class="w-full text-black rounded-md p-2 border border-gray-300" type="datetime-local" />
+                                <button @click="updateLink()"
+                                    class="p-2 bg-indigo-500 hover:bg-indigo-600 rounded-md text-white">
+                                    Update Link
+                                </button>
+                            </div>
 
-                            <button @click="editLink = null" class="p-2 bg-slate-500 hover:bg-slate-600 rounded-md text-white">
+                            <button @click="editLink = null"
+                                class="p-2 bg-slate-500 hover:bg-slate-600 rounded-md text-white">
                                 Cancel
                             </button>
                         </div>
@@ -142,12 +161,13 @@ const copyLink = (link) => {
                             <div class="flex gap-1 items-center justify-between pb-3">
                                 <div>
                                     <div class="font-bold w-full mb-1 text-xs">
-                                        <a :href="getLink(inviteLink)" target="_blank" class="text-indigo-200 hover:underline">
+                                        <a :href="getLink(inviteLink)" target="_blank"
+                                            class="text-indigo-200 hover:underline">
                                             {{ getLink(inviteLink) }}
                                         </a>
                                     </div>
                                     <div class="w-full text-xs">
-                                        Expires At: {{ new Date(inviteLink.expires_at).toLocaleString() }}
+                                        Expires At: {{  inviteLink.expires_at ? new Date(inviteLink.expires_at).toLocaleString() : 'Never' }}
                                     </div>
                                 </div>
 

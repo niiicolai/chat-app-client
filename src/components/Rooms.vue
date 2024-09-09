@@ -1,12 +1,14 @@
 <script setup>
 import RoomIcon from '@/components/RoomIcon.vue'
 import EditUser from '@/components/EditUser.vue'
+import Uploads from '@/components/Uploads.vue'
 import { useToast } from '@/composables/useToast.js'
 import { useRoom } from '@/composables/useRoom.js'
 import { useRoomSelector } from '@/composables/useRoomSelector.js'
 import { useRoomTypes } from '@/composables/useRoomTypes.js'
 import { useUser } from '@/composables/useUser.js'
 import { useChannelSelector } from '@/composables/useChannelSelector.js'
+import { useChannel } from '@/composables/useChannel.js'
 import router from '@/router'
 import { ref, computed, onMounted } from 'vue'
 import { v4 as uuidv4 } from 'uuid'
@@ -17,6 +19,7 @@ const roomSelector = useRoomSelector()
 const roomTypesCtrl = useRoomTypes()
 const channelSelector = useChannelSelector()
 const userCtrl = useUser()
+const channelCtrl = useChannel()
 
 const rooms = computed(() => {
     return roomSelector.rooms.value
@@ -42,6 +45,7 @@ const roomCategories = computed(() => {
     return roomTypesCtrl.roomCategories.value
 })
 
+const showUploads = ref(false)
 const showRules = ref(false)
 const showEditUser = ref(false)
 
@@ -59,14 +63,19 @@ const editRoomCategory = ref('')
 const editRoomForm = ref(null)
 
 const editRoomSettings = ref(null)
+const bytesUsed = ref(0)
 const joinChannel = ref('')
 const joinMessage = ref('')
 const rulesText = ref('')
-const startEditRoomSettings = (room) => {
+const startEditRoomSettings = async (room) => {
     editRoomSettings.value = room
     joinChannel.value = room.setting.join_channel_uuid
     joinMessage.value = room.setting.join_message
     rulesText.value = room.setting.rules_text
+
+    const bytesData = await channelCtrl.messageUploads.bytesUsed(room.uuid)
+    const bytesMB = (bytesData?.bytes_used || 0) / 1024 / 1024;
+    bytesUsed.value = bytesMB.toFixed(2)
 }
 
 const startEditRoom = (room) => {
@@ -144,6 +153,9 @@ const deleteRoom = async (room) => {
     const { data } = await roomCtrl.findAll()
     rooms.value = data
 
+    await roomSelector.setRoom(null)
+    await channelSelector.setChannel(null)
+    await roomSelector.fetchRooms()
     toastCtrl.add('Room deleted', 'success')
 }
 
@@ -170,6 +182,8 @@ const leaveRoom = async () => {
     await roomSelector.setRoom(null)
     await channelSelector.setChannel(null)
     await roomSelector.fetchRooms()
+
+    toastCtrl.add('Room left', 'success')
 }
 
 const logout = async () => {
@@ -223,6 +237,7 @@ onMounted(async () => {
 <template>
     <div>
         <EditUser :editUser="showEditUser" :close="() => showEditUser = false" />
+        <Uploads :display="showUploads" :close="() => showUploads = false" />
 
         <div v-if="showRules" style="z-index:3;"
             class="fixed top-0 left-0 w-full h-full bg-gray-800 bg-opacity-50 flex items-center justify-center">
@@ -288,6 +303,7 @@ onMounted(async () => {
                             Total Uploads Size
                         </div>
                         <div>
+                            {{ bytesUsed }} /
                             {{ (editRoomSettings.setting.total_upload_bytes / 1024 / 1024).toFixed(2) }} MB
                         </div>
                     </div>
@@ -537,6 +553,15 @@ onMounted(async () => {
                                 </svg>
                             </button>
 
+                            <button @click="showUploads = true" title="Show Uploads"
+                                class="p-1 text-xs rounded-md bg-indigo-700 hover:bg-indigo-600 focus:outline-none text-white">
+                                <!--!Font Awesome Free 6.6.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2024 Fonticons, Inc.-->
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="white" width="11" viewBox="0 0 384 512">
+                                    <path
+                                        d="M320 464c8.8 0 16-7.2 16-16l0-288-80 0c-17.7 0-32-14.3-32-32l0-80L64 48c-8.8 0-16 7.2-16 16l0 384c0 8.8 7.2 16 16 16l256 0zM0 64C0 28.7 28.7 0 64 0L229.5 0c17 0 33.3 6.7 45.3 18.7l90.5 90.5c12 12 18.7 28.3 18.7 45.3L384 448c0 35.3-28.7 64-64 64L64 512c-35.3 0-64-28.7-64-64L0 64z" />
+                                </svg>
+                            </button>
+
                             <button @click="toggleShowEditUser()" title="Edit User"
                                 class="p-1 text-xs rounded-md bg-indigo-700 hover:bg-indigo-600 focus:outline-none text-white">
                                 <!--!Font Awesome Free 6.6.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2024 Fonticons, Inc.-->
@@ -567,7 +592,11 @@ onMounted(async () => {
                             <button @click="logout()" title="Logout"
                                 class="p-1 text-xs rounded-md bg-red-700 hover:bg-red-600 focus:outline-none text-white">
                                 <!--!Font Awesome Free 6.6.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2024 Fonticons, Inc.-->
-                                Logout
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="white" width="11"
+                                    viewBox="0 0 512 512">
+                                    <path
+                                        d="M377.9 105.9L500.7 228.7c7.2 7.2 11.3 17.1 11.3 27.3s-4.1 20.1-11.3 27.3L377.9 406.1c-6.4 6.4-15 9.9-24 9.9c-18.7 0-33.9-15.2-33.9-33.9l0-62.1-128 0c-17.7 0-32-14.3-32-32l0-64c0-17.7 14.3-32 32-32l128 0 0-62.1c0-18.7 15.2-33.9 33.9-33.9c9 0 17.6 3.6 24 9.9zM160 96L96 96c-17.7 0-32 14.3-32 32l0 256c0 17.7 14.3 32 32 32l64 0c17.7 0 32 14.3 32 32s-14.3 32-32 32l-64 0c-53 0-96-43-96-96L0 128C0 75 43 32 96 32l64 0c17.7 0 32 14.3 32 32s-14.3 32-32 32z" />
+                                </svg>
                             </button>
                         </div>
                     </div>
@@ -606,18 +635,15 @@ onMounted(async () => {
                             <li v-for="room in rooms" :key="room.uuid">
                                 <button @click="showRoom(room)" :title="room.description"
                                     class="shadow-md bg-indigo-700 hover:bg-slate-500 focus:outline-none rounded-md overflow-hidden w-full h-12 flex items-center justify-start gap-2 p-1"
-                                    :class="{ 
+                                    :class="{
                                         'bg-slate-500': room && roomSelector.room.value && room.uuid === roomSelector.room.value.uuid,
-                                    }"
-                                    :style="{
+                                    }" :style="{
                                         'background-image': room.avatar_src ? 'url(' + room.avatar_src + ')' : 'none',
                                         'background-size': 'cover',
                                         'background-position': 'center',
                                     }">
-                                    <div
-                                        class="p-2 font-bold text-white w-full text-md text-left overflow-hidden text-ellipsis"
-                                        :class="{ 'bg-gray-800/30 rounded-md text-indigo-800 hover:bg-gray-800/60': room && room.avatar_src }"
-                                        >
+                                    <div class="p-2 font-bold text-white w-full text-md text-left overflow-hidden text-ellipsis"
+                                        :class="{ 'bg-gray-800/30 rounded-md text-indigo-800 hover:bg-gray-800/60': room && room.avatar_src }">
                                         {{ room.name }}
                                     </div>
                                 </button>
