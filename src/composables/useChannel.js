@@ -49,11 +49,31 @@ export function useChannel() {
         findOne: false,
     }) };
 
+    const webhooks = { ...api.crudAPI('channel_webhook', 'channel_webhooks', {
+        findAll: true,
+        findOne: true,
+        template: false,
+        create: true,
+        update: true,
+        delete: true
+    }) };
+    webhooks.event = async (webhook_uuid, body) => {
+        if (!webhook_uuid) {
+            throw new Error('webhook_uuid are required');
+        }
+
+        return api.fetchAPI(`/channel_webhook/${webhook_uuid}`,
+            { method: 'POST', body: JSON.stringify(body) },
+            true
+        );
+    };
+
     return {
         ...crudAPI,
         types,
         messages,
         messageUploads,
         uploadTypes,
+        webhooks
     };
 }

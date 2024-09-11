@@ -1,15 +1,12 @@
 <script setup>
 import RoomIcon from '@/components/RoomIcon.vue'
-import EditUser from '@/components/EditUser.vue'
 import Uploads from '@/components/Uploads.vue'
 import { useToast } from '@/composables/useToast.js'
 import { useRoom } from '@/composables/useRoom.js'
 import { useRoomSelector } from '@/composables/useRoomSelector.js'
 import { useRoomTypes } from '@/composables/useRoomTypes.js'
-import { useUser } from '@/composables/useUser.js'
 import { useChannelSelector } from '@/composables/useChannelSelector.js'
 import { useChannel } from '@/composables/useChannel.js'
-import router from '@/router'
 import { ref, computed, onMounted } from 'vue'
 import { v4 as uuidv4 } from 'uuid'
 
@@ -18,7 +15,6 @@ const roomCtrl = useRoom()
 const roomSelector = useRoomSelector()
 const roomTypesCtrl = useRoomTypes()
 const channelSelector = useChannelSelector()
-const userCtrl = useUser()
 const channelCtrl = useChannel()
 
 const rooms = computed(() => {
@@ -47,7 +43,6 @@ const roomCategories = computed(() => {
 
 const showUploads = ref(false)
 const showRules = ref(false)
-const showEditUser = ref(false)
 
 const newRoom = ref(false)
 const roomName = ref('')
@@ -67,6 +62,7 @@ const bytesUsed = ref(0)
 const joinChannel = ref('')
 const joinMessage = ref('')
 const rulesText = ref('')
+
 const startEditRoomSettings = async (room) => {
     editRoomSettings.value = room
     joinChannel.value = room.setting.join_channel_uuid
@@ -163,7 +159,6 @@ const showRoom = async (room) => {
     await roomSelector.setRoom(room)
 }
 
-
 const leaveRoom = async () => {
     const uuid = userRoom.value?.uuid
     if (!uuid) {
@@ -184,15 +179,6 @@ const leaveRoom = async () => {
     await roomSelector.fetchRooms()
 
     toastCtrl.add('Room left', 'success')
-}
-
-const logout = async () => {
-    userCtrl.logout()
-    router.push({ name: 'login' })
-}
-
-const toggleShowEditUser = () => {
-    showEditUser.value = true
 }
 
 const updateRoomSettings = async () => {
@@ -236,7 +222,7 @@ onMounted(async () => {
 
 <template>
     <div>
-        <EditUser :editUser="showEditUser" :close="() => showEditUser = false" />
+        
         <Uploads :display="showUploads" :close="() => showUploads = false" />
 
         <div v-if="showRules" style="z-index:3;"
@@ -526,6 +512,16 @@ onMounted(async () => {
                                 </svg>
                             </button>
 
+                            <button @click="roomSelector.toggleDisplayWebhooks()" title="Show Webhooks" v-if="isAdmin"
+                                class="p-1 text-xs rounded-md bg-indigo-700 hover:bg-indigo-600 focus:outline-none text-white">
+                                <!--!Font Awesome Free 6.6.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2024 Fonticons, Inc.-->
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="white" width="12"
+                                    viewBox="0 0 640 512">
+                                    <path
+                                        d="M392.8 1.2c-17-4.9-34.7 5-39.6 22l-128 448c-4.9 17 5 34.7 22 39.6s34.7-5 39.6-22l128-448c4.9-17-5-34.7-22-39.6zm80.6 120.1c-12.5 12.5-12.5 32.8 0 45.3L562.7 256l-89.4 89.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0l112-112c12.5-12.5 12.5-32.8 0-45.3l-112-112c-12.5-12.5-32.8-12.5-45.3 0zm-306.7 0c-12.5-12.5-32.8-12.5-45.3 0l-112 112c-12.5 12.5-12.5 32.8 0 45.3l112 112c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L77.3 256l89.4-89.4c12.5-12.5 12.5-32.8 0-45.3z" />
+                                </svg>
+                            </button>
+
                             <button @click="startEditRoom(room)" v-if="isAdmin" title="Edit Room"
                                 class="p-1 text-xs rounded-md bg-indigo-700 hover:bg-indigo-600 focus:outline-none text-white">
                                 <!--!Font Awesome Free 6.6.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2024 Fonticons, Inc.-->
@@ -562,15 +558,6 @@ onMounted(async () => {
                                 </svg>
                             </button>
 
-                            <button @click="toggleShowEditUser()" title="Edit User"
-                                class="p-1 text-xs rounded-md bg-indigo-700 hover:bg-indigo-600 focus:outline-none text-white">
-                                <!--!Font Awesome Free 6.6.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2024 Fonticons, Inc.-->
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="white" width="11" viewBox="0 0 448 512">
-                                    <path
-                                        d="M304 128a80 80 0 1 0 -160 0 80 80 0 1 0 160 0zM96 128a128 128 0 1 1 256 0A128 128 0 1 1 96 128zM49.3 464l349.5 0c-8.9-63.3-63.3-112-129-112l-91.4 0c-65.7 0-120.1 48.7-129 112zM0 482.3C0 383.8 79.8 304 178.3 304l91.4 0C368.2 304 448 383.8 448 482.3c0 16.4-13.3 29.7-29.7 29.7L29.7 512C13.3 512 0 498.7 0 482.3z" />
-                                </svg>
-                            </button>
-
                             <button @click="deleteRoom(room)" v-if="isAdmin" title="Delete Room"
                                 class="p-1 text-xs rounded-md bg-red-700 hover:bg-red-600 focus:outline-none text-white">
                                 <!--!Font Awesome Free 6.6.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2024 Fonticons, Inc.-->
@@ -586,16 +573,6 @@ onMounted(async () => {
                                 <svg xmlns="http://www.w3.org/2000/svg" fill="white" width="11" viewBox="0 0 576 512">
                                     <path
                                         d="M320 32c0-9.9-4.5-19.2-12.3-25.2S289.8-1.4 280.2 1l-179.9 45C79 51.3 64 70.5 64 92.5L64 448l-32 0c-17.7 0-32 14.3-32 32s14.3 32 32 32l64 0 192 0 32 0 0-32 0-448zM256 256c0 17.7-10.7 32-24 32s-24-14.3-24-32s10.7-32 24-32s24 14.3 24 32zm96-128l96 0 0 352c0 17.7 14.3 32 32 32l64 0c17.7 0 32-14.3 32-32s-14.3-32-32-32l-32 0 0-320c0-35.3-28.7-64-64-64l-96 0 0 64z" />
-                                </svg>
-                            </button>
-
-                            <button @click="logout()" title="Logout"
-                                class="p-1 text-xs rounded-md bg-red-700 hover:bg-red-600 focus:outline-none text-white">
-                                <!--!Font Awesome Free 6.6.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2024 Fonticons, Inc.-->
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="white" width="11"
-                                    viewBox="0 0 512 512">
-                                    <path
-                                        d="M377.9 105.9L500.7 228.7c7.2 7.2 11.3 17.1 11.3 27.3s-4.1 20.1-11.3 27.3L377.9 406.1c-6.4 6.4-15 9.9-24 9.9c-18.7 0-33.9-15.2-33.9-33.9l0-62.1-128 0c-17.7 0-32-14.3-32-32l0-64c0-17.7 14.3-32 32-32l128 0 0-62.1c0-18.7 15.2-33.9 33.9-33.9c9 0 17.6 3.6 24 9.9zM160 96L96 96c-17.7 0-32 14.3-32 32l0 256c0 17.7 14.3 32 32 32l64 0c17.7 0 32 14.3 32 32s-14.3 32-32 32l-64 0c-53 0-96-43-96-96L0 128C0 75 43 32 96 32l64 0c17.7 0 32 14.3 32 32s-14.3 32-32 32z" />
                                 </svg>
                             </button>
                         </div>

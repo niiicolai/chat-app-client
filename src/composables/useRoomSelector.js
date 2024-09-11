@@ -14,7 +14,9 @@ const userRooms = ref([])
 const userRoom = ref(null)
 const inviteLinks = ref([])
 const messageUploads = ref([])
+const webhooks = ref([])
 const displayLinks = ref(false)
+const displayWebhooks = ref(false)
 
 export function useRoomSelector() {
     async function fetchRooms() {
@@ -43,6 +45,7 @@ export function useRoomSelector() {
         await setUserRooms(newRoom)
         await setInviteLinks(newRoom)
         await channelSelector.setRoom(newRoom)
+        await setWebhooks(newRoom)
     }
 
     async function setUserRooms(newRoom) {
@@ -62,6 +65,12 @@ export function useRoomSelector() {
         } else {
             userRooms.value = []
             userRoom.value = null
+        }
+    }
+
+    async function reinitUserRooms() {
+        if (room.value) {
+            setUserRooms(room.value)
         }
     }
 
@@ -97,6 +106,26 @@ export function useRoomSelector() {
         messageUploads.value = messageUploadsData
     }
 
+    async function setWebhooks(newRoom) {
+        if (!newRoom || !newRoom.uuid || !hasRole('Admin')) {
+            webhooks.value = []
+            return
+        }
+
+        const { data: webhooksData } = await channelCtrl
+            .webhooks
+            .findAll({ room_uuid: newRoom.uuid })
+
+            console.log(webhooksData)
+        webhooks.value = webhooksData
+    }
+
+    async function reinitWebhooks() {
+        if (room.value) {
+            setWebhooks(room.value)
+        }
+    }
+
     async function reinitMessageUploads() {
         if (room.value) {
             setMessageUploads(room.value)
@@ -105,11 +134,16 @@ export function useRoomSelector() {
 
     const hasRole = (role) => {
         if (!userRoom.value) return false
+        console.log(userRoom.value.room_role_name)
         return userRoom.value.room_role_name === role
     }
 
     const toggleDisplayLinks = () => {
         displayLinks.value = !displayLinks.value
+    }
+
+    const toggleDisplayWebhooks = () => {
+        displayWebhooks.value = !displayWebhooks.value
     }
 
     const reInitRoom = async () => {
@@ -128,12 +162,18 @@ export function useRoomSelector() {
         setRoom,
         setInviteLinks,
         setUserRooms,
+        webhooks,
+        setWebhooks,
         reInitRoom,
         reinitMessageUploads,
+        reinitWebhooks,
+        reinitUserRooms,
         hasRole,
         fetchRooms,
         reinitInviteLinks,
         displayLinks,
+        displayWebhooks,
+        toggleDisplayWebhooks,
         toggleDisplayLinks
     }
 }
