@@ -1,0 +1,7 @@
+services:
+  chat_vue:
+    image: chat_vue:v1.0
+    environment:
+      - NODE_ENV=production
+    ports:
+      - "5173:5173"
