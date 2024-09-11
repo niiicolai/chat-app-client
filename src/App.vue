@@ -8,7 +8,7 @@ import { useChannelTypes } from '@/composables/useChannelTypes.js'
 import { useRoomTypes } from '@/composables/useRoomTypes.js'
 import router from '@/router';
 import { onMounted } from 'vue'
-
+ 
 const publicRoutes = ['login', 'register']
 const userCtrl = useUser()
 const channelTypesCtrl = useChannelTypes()
