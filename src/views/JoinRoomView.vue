@@ -1,17 +1,17 @@
-<script setup>
+<script setup lang="ts">
 import Content from '@/components/Content.vue';
 import router from '@/router';
-import { useToast } from '@/composables/useToast.js'
-import { useRoom } from '@/composables/useRoom.js'
+import { useToast } from '@/composables/useToast'
+import { useRoom } from '@/composables/useRoom'
 import { ref, onMounted } from 'vue'
 
 const toastCtrl = useToast()
 const roomCtrl = useRoom()
 const uuid = ref(router.currentRoute.value.params.uuid)
 const state = ref("waiting")
-const result = ref(null)
+const result = ref(null as any)
 
-const navigateTo = () => {
+const navigateTo = (): void => {
     router.push({ name: 'home' })
 }
 
@@ -22,7 +22,7 @@ onMounted(async () => {
             state.value = "joined"
             result.value = join
         }
-    } catch (error) {
+    } catch (error: any) {
         if (error.message === 'Error: Already a member') {
             state.value = "already-joined"
             return

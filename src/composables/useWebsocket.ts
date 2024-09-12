@@ -1,19 +1,25 @@
-import { useToast } from './useToast.js';
+import { useToast } from './useToast';
 
 const WEBSOCKET_URL = import.meta.env.VITE_WEBSOCKET_URL;
 const AUTH_KEY = import.meta.env.VITE_API_LOCAL_STORAGE_KEY;
-const onChatMessageCallbacks = [];
+const onChatMessageCallbacks = [] as ((data: any) => void)[];
+const toast = useToast();
 
-export function useWebsocket() {
+interface UseWebsocket {
+    onChatMessage: (cb: (data: any) => void) => void;
+    joinChannel: (channel: string) => void;
+    leaveChannel: () => void;
+    socket: WebSocket;
+}
+
+export function useWebsocket() : UseWebsocket {
     const socket = new WebSocket(WEBSOCKET_URL, 'echo-protocol');
 
     socket.onopen = () => {};
     socket.onclose = () => {};
-
     socket.onmessage = (event) => {
         const data = JSON.parse(event.data);
         if (data.error) {
-            const toast = useToast();
             toast.add('WebSocket error: ' + data.error, 'error');
             return;
         } else if (data.type === 'chat_message') {
@@ -21,13 +27,11 @@ export function useWebsocket() {
         }
     };
 
-    
-
-    const onChatMessage = (cb) => {
+    const onChatMessage = (cb: (data: any) => void): void => {
         onChatMessageCallbacks.push(cb);
     };
 
-    const joinChannel = (channel) => {
+    const joinChannel = (channel: string): void => {
         const token = localStorage.getItem(AUTH_KEY);
         if (!token) {
             throw new Error('No token found in local storage');
@@ -35,7 +39,7 @@ export function useWebsocket() {
         socket.send(JSON.stringify({ type: 'join_channel', channel, token: `Bearer ${token}` }));
     };
 
-    const leaveChannel = () => {
+    const leaveChannel = (): void => {
         socket.send(JSON.stringify({ type: 'leave_channel' }));
     };
 

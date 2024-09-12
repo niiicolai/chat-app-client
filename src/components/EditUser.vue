@@ -55,7 +55,7 @@
                     <button type="submit" class="p-2 mr-2 bg-indigo-500 hover:bg-indigo-600 rounded-md text-white">
                         Update User
                     </button>
-                    <button type="button" @click="close"
+                    <button type="button" @click="() => close()"
                         class="p-2 bg-slate-500 hover:bg-slate-600 rounded-md text-white">
                         Cancel
                     </button>
@@ -65,19 +65,22 @@
     </div>
 </template>
 
-<script setup>
-import { useToast } from '@/composables/useToast.js'
-import { useUser } from '@/composables/useUser.js'
+<script setup lang="ts">
+import { useToast } from '@/composables/useToast'
+import { useUser } from '@/composables/useUser'
 import { ref, onMounted } from 'vue'
+import type User from '@/models/user'
 
 const props = defineProps({
     editUser: {
         type: Boolean,
-        required: true
+        required: true,
+        default: false
     },
     close: {
         type: Function,
-        required: true
+        required: true,
+        default: () => { }
     }
 })
 const toastCtrl = useToast()
@@ -85,15 +88,15 @@ const userCtrl = useUser()
 const username = ref('')
 const email = ref('')
 const password = ref('')
-const updateForm = ref(null)
-const sub = userCtrl.getSub()
+const updateForm = ref(null as any)
+const sub = userCtrl.getSub() ?? ''
 
 const update = async () => {
 
     try {
         await userCtrl.update(sub, {}, updateForm.value)
         props.close()
-    } catch (error) {
+    } catch (error: any) {
         toastCtrl.add(error, 'error')
     }
 
@@ -101,7 +104,7 @@ const update = async () => {
 }
 
 onMounted(async () => {
-    const me = await userCtrl.me();
+    const me = await userCtrl.me() as User
 
     username.value = me.username
     email.value = me.email

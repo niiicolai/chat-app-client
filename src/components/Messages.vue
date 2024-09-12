@@ -1,14 +1,15 @@
-<script setup>
+<script setup lang="ts">
 import EmojiPicker from '@/components/EmojiPicker.vue'
 import MessageUpload from '@/components/MessageUpload.vue'
-import { useToast } from '@/composables/useToast.js'
-import { useChannel } from '@/composables/useChannel.js'
-import { useChannelSelector } from '@/composables/useChannelSelector.js'
-import { useRoomSelector } from '@/composables/useRoomSelector.js'
-import { useUser } from '@/composables/useUser.js'
-import { useWebsocket } from '@/composables/useWebsocket.js'
+import { useToast } from '@/composables/useToast'
+import { useChannel } from '@/composables/useChannel'
+import { useChannelSelector } from '@/composables/useChannelSelector'
+import { useRoomSelector } from '@/composables/useRoomSelector'
+import { useUser } from '@/composables/useUser'
+import { useWebsocket } from '@/composables/useWebsocket'
 import { ref, computed, onMounted } from 'vue'
 import { v4 as uuidv4 } from 'uuid';
+import type ChannelMessage from '@/models/channel_message'
 
 const sub = useUser().getSub()
 const toastCtrl = useToast()
@@ -16,15 +17,16 @@ const channelCtrl = useChannel()
 const channelSelector = useChannelSelector()
 const roomSelector = useRoomSelector()
 const webSocket = useWebsocket()
-const messageWrapper = ref(null)
 
+const messageWrapper = ref(null as any)
 const showEmojiPicker = ref(false)
-const closeEmojiPicker = () => {
-    showEmojiPicker.value = false
-}
-const pickEmoji = (emoji) => {
-    channelMessage.value += emoji
-}
+const newMessageUuid = ref(uuidv4())
+const channelMessage = ref('')
+const channelMessageFile = ref(null as any)
+const channelMessageFileInput = ref(null as any)
+const newMessageFormElement = ref(null as any)
+const editChannelMessageBody = ref('')
+const editChannelMessage = ref(null as null | ChannelMessage)
 
 const channel = computed(() => {
     return channelSelector.channel.value
@@ -42,14 +44,14 @@ const isModerator = computed(() => {
     return roomSelector.hasRole('Moderator')
 })
 
-webSocket.onChatMessage((data) => {
-    if (data.message.channel_uuid === channel.value.uuid) {
+webSocket.onChatMessage((data: any): void => {
+    if (data.message.channel_uuid === channel.value?.uuid) {
         channelSelector.reinitChannelMessages()
         scrollMessageWrapper()
     }
 })
 
-const scrollMessageWrapper = () => {
+const scrollMessageWrapper = (): void => {
     if (!messageWrapper.value) return
     messageWrapper.value.scrollTop = messageWrapper.value.scrollHeight
     setTimeout(() => {
@@ -57,16 +59,7 @@ const scrollMessageWrapper = () => {
     }, 1000)
 }
 
-channelSelector.onSetChannel(() => {
-    scrollMessageWrapper()
-})
-
-const newMessageUuid = ref(uuidv4())
-const channelMessage = ref('')
-const channelMessageFile = ref(null)
-const channelMessageFileInput = ref(null)
-const newMessageFormElement = ref(null)
-const createChannelMessage = async (message) => {
+const createChannelMessage = async (message: any): Promise<void> => {
     if (!channel.value) {
         toastCtrl.add('Select a channel', 'error')
         return
@@ -78,7 +71,7 @@ const createChannelMessage = async (message) => {
 
     try {
         await channelCtrl.messages.create({}, newMessageFormElement.value)
-    } catch (error) {
+    } catch (error: any) {
         toastCtrl.add(error.message, 'error')
         newMessageUuid.value = uuidv4()
         return
@@ -92,23 +85,30 @@ const createChannelMessage = async (message) => {
     scrollMessageWrapper()
 }
 
-const editChannelMessageBody = ref('')
-const editChannelMessage = ref(null)
-const startEditChannelMessage = (message) => {
+const closeEmojiPicker = (): void => {
+    showEmojiPicker.value = false
+}
+
+const pickEmoji = (emoji: string): void => {
+    channelMessage.value += emoji
+}
+
+const startEditChannelMessage = (message: ChannelMessage): void => {
     editChannelMessage.value = message
     editChannelMessageBody.value = message.body
 }
-const updateChannelMessage = async () => {
+
+const updateChannelMessage = async (): Promise<void> => {
     if (!editChannelMessageBody.value) {
         toastCtrl.add('Message is required', 'error')
         return
     }
 
     try {
-        await channelCtrl.messages.update(editChannelMessage.value.uuid, {
+        await channelCtrl.messages.update(editChannelMessage.value?.uuid, {
             body: editChannelMessageBody.value
         })
-    } catch (error) {
+    } catch (error: any) {
         toastCtrl.add(error.message, 'error')
         return
     }
@@ -118,32 +118,34 @@ const updateChannelMessage = async () => {
     channelSelector.reinitChannelMessages()
 }
 
-const deleteChannelMessage = async (message) => {
+const deleteChannelMessage = async (message: ChannelMessage): Promise<void> => {
     try {
         await channelCtrl.messages.delete(message.uuid)
-    } catch (error) {
+    } catch (error: any) {
         toastCtrl.add(error.message, 'error')
         return
     }
     channelSelector.reinitChannelMessages()
 }
 
-const clearChannelMessageFileInput = () => {
+const clearChannelMessageFileInput = (): void => {
     channelMessageFile.value = null
     channelMessageFileInput.value.value = ''
 }
 
-onMounted(async () => {
-    channelMessageFileInput.value.addEventListener('change', (event) => {
-        channelMessageFile.value = event.target.files[0]
+channelSelector.onSetChannel(() => {
+    scrollMessageWrapper()
+})
 
+onMounted(async () => {
+    channelMessageFileInput.value.addEventListener('change', (event: any) => {
+        channelMessageFile.value = event.target.files[0]
     })
 })
 </script>
 
 <template>
     <div>
-
         <div class="w-full absolute left-0 right-0 bottom-28 pb-3 overflow-y-scroll" ref="messageWrapper"
             style="top:5em;">
             <ul class="p-3 flex flex-col gap-3 justify-end bg-black">

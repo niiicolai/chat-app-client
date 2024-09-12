@@ -1,10 +1,17 @@
-import { ref } from 'vue'
+import { ref, type Ref } from 'vue'
 import { v4 as uuidv4 } from 'uuid';
-const toasts = ref([]);
+import type Toast from '@/models/toast';
 
-export function useToast() {
+const toasts = ref([] as Toast[]);
 
-    const add = (message, type = 'info', time = 5000) => {
+interface UseToast {
+    toasts: Ref<Toast[]>;
+    add: (message: string, type?: string, time?: number) => void;
+}
+
+export function useToast() : UseToast {
+
+    const add = (message: string, type = 'info', time = 5000) : void => {
         const uuid = uuidv4();
         const started = Date.now();
         toasts.value.push({ uuid, message, type, time, started });

@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import Content from '@/components/Content.vue';
-import { useUser } from '@/composables/useUser.js'
-import { useToast } from '@/composables/useToast.js'
 import router from '@/router';
+import Content from '@/components/Content.vue';
+import { useUser } from '@/composables/useUser'
+import { useToast } from '@/composables/useToast'
 import { ref } from 'vue'
 import { v4 as uuidv4 } from 'uuid'
 
-const formRef = ref(null)
+const formRef = ref(null as any)
 const uuid = ref(uuidv4())
 const username = ref('')
 const email = ref('')
@@ -14,7 +14,8 @@ const password = ref('')
 
 const userCtrl = useUser()
 const toastCtrl = useToast()
-const register = async () => {
+
+const register = async (): Promise<void> => {
     if (!username.value) {
         toastCtrl.add('Please enter username', 'error')
         return
@@ -34,7 +35,7 @@ const register = async () => {
         await userCtrl.create({}, formRef.value)
 
         router.push({ name: 'home' })
-    } catch (error) {
+    } catch (error: any) {
         uuid.value = uuidv4()
         toastCtrl.add(error, 'error')
     }

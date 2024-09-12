@@ -7,7 +7,7 @@ import Messages from '@/components/Messages.vue';
 import Webhooks from '@/components/Webhooks.vue';
 import Menu from '@/components/Menu.vue';
 import NoRoomSelected from '@/components/NoRoomSelected.vue';
-import { useRoomSelector } from '@/composables/useRoomSelector.js';
+import { useRoomSelector } from '@/composables/useRoomSelector';
 import { computed } from 'vue';
 
 const roomSelector = useRoomSelector()

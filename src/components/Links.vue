@@ -1,15 +1,21 @@
-<script setup>
-import { useToast } from '@/composables/useToast.js'
-import { useRoom } from '@/composables/useRoom.js'
-import { useRoomSelector } from '@/composables/useRoomSelector.js'
-import { useChannelSelector } from '@/composables/useChannelSelector.js'
-import { useUser } from '@/composables/useUser.js'
+<script setup lang="ts">
+import { useToast } from '@/composables/useToast'
+import { useRoom } from '@/composables/useRoom'
+import { useRoomSelector } from '@/composables/useRoomSelector'
+import { useChannelSelector } from '@/composables/useChannelSelector'
 import { ref, computed, onMounted } from 'vue'
+import type RoomInviteLink from '@/models/room_invite_link'
 
 const toastCtrl = useToast()
 const roomCtrl = useRoom()
 const roomSelector = useRoomSelector()
 const channelSelector = useChannelSelector()
+
+const linkExpiresAt = ref('')
+const neverExpires = ref(false)
+const editLink = ref(null as RoomInviteLink | null)
+const editLinkExpiresAt = ref('')
+const editNeverExpires = ref(false)
 
 const inviteLinks = computed(() => {
     return roomSelector.inviteLinks.value
@@ -21,19 +27,12 @@ const isAdmin = computed(() => {
     return roomSelector.hasRole('Admin')
 })
 
-const linkExpiresAt = ref('')
-const neverExpires = ref(false)
-const editLink = ref(null)
-
-const startEditLink = (link) => {
+const startEditLink = (link: RoomInviteLink) : void => {
     editLink.value = link
-   
     editNeverExpires.value = link.expires_at === null
 }
 
-const editLinkExpiresAt = ref('')
-const editNeverExpires = ref(false)
-const updateLink = async () => {
+const updateLink = async () : Promise<void> => {
     if (!editLinkExpiresAt.value && !editNeverExpires.value) {
         return toastCtrl.add('Expires At is required', 'error')
     }
@@ -45,7 +44,7 @@ const updateLink = async () => {
         await roomCtrl.inviteLinks.update(editLink.value.uuid, {
             expires_at: editNeverExpires.value ? null : editLinkExpiresAt.value
         })
-    } catch (error) {
+    } catch (error: any) {
         toastCtrl.add(error.message, 'error')
         return
     }
@@ -55,16 +54,16 @@ const updateLink = async () => {
     toastCtrl.add('Link updated', 'success')
 }
 
-const createLink = async () => {
+const createLink = async () : Promise<void> => {
     if (!linkExpiresAt.value && !neverExpires.value) {
         return toastCtrl.add('Expires At is required', 'error')
     }
 
-    const room_uuid = roomSelector.room.value.uuid
+    const room_uuid = roomSelector.room.value?.uuid
     const expires_at = neverExpires.value ? null : linkExpiresAt.value;
     try {
         await roomCtrl.inviteLinks.create({ room_uuid, expires_at })
-    } catch (error) {
+    } catch (error: any) {
         toastCtrl.add(error.message, 'error')
         return
     }
@@ -74,10 +73,10 @@ const createLink = async () => {
     toastCtrl.add('Link created', 'success')
 }
 
-const deleteLink = async (link) => {
+const deleteLink = async (link: RoomInviteLink) : Promise<void> => {
     try {
         await roomCtrl.inviteLinks.delete(link.uuid)
-    } catch (error) {
+    } catch (error: any) {
         toastCtrl.add(error.message, 'error')
         return
     }
@@ -85,12 +84,14 @@ const deleteLink = async (link) => {
     roomSelector.reinitInviteLinks();
     toastCtrl.add('Link deleted', 'success')
 }
-const getLink = (link) => {
+
+const getLink = (link: RoomInviteLink) : string => {
     const origin = window.location.origin
     const url = `${origin}/join_room/${link.uuid}`
     return url
 }
-const copyLink = (link) => {
+
+const copyLink = (link: RoomInviteLink) : void => {
     const url = getLink(link)
 
     navigator.clipboard.writeText(url)

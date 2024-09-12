@@ -22,21 +22,21 @@
     </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import EditUser from '@/components/EditUser.vue'
-import { useUser } from '@/composables/useUser.js'
+import { useUser } from '@/composables/useUser'
 import router from '@/router'
 import { ref } from 'vue'
 
 const userCtrl = useUser()
 const showEditUser = ref(false)
 
-const logout = async () => {
+const logout = async (): Promise<void> => {
     userCtrl.logout()
     router.push({ name: 'login' })
 }
 
-const toggleShowEditUser = () => {
+const toggleShowEditUser = (): void => {
     showEditUser.value = true
 }
 </script>

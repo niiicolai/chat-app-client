@@ -1,14 +1,16 @@
-<script setup>
+<script setup lang="ts">
 import RoomIcon from '@/components/RoomIcon.vue'
 import Uploads from '@/components/Uploads.vue'
-import { useToast } from '@/composables/useToast.js'
-import { useRoom } from '@/composables/useRoom.js'
-import { useRoomSelector } from '@/composables/useRoomSelector.js'
-import { useRoomTypes } from '@/composables/useRoomTypes.js'
-import { useChannelSelector } from '@/composables/useChannelSelector.js'
-import { useChannel } from '@/composables/useChannel.js'
+import { useToast } from '@/composables/useToast'
+import { useRoom } from '@/composables/useRoom'
+import { useRoomSelector } from '@/composables/useRoomSelector'
+import { useRoomTypes } from '@/composables/useRoomTypes'
+import { useChannelSelector } from '@/composables/useChannelSelector'
+import { useChannel } from '@/composables/useChannel'
 import { ref, computed, onMounted } from 'vue'
 import { v4 as uuidv4 } from 'uuid'
+import type Room from '@/models/room'
+import type RoomSetting from '@/models/room_setting'
 
 const toastCtrl = useToast()
 const roomCtrl = useRoom()
@@ -16,6 +18,28 @@ const roomSelector = useRoomSelector()
 const roomTypesCtrl = useRoomTypes()
 const channelSelector = useChannelSelector()
 const channelCtrl = useChannel()
+
+const showUploads = ref(false)
+const showRules = ref(false)
+
+const newRoom = ref(false)
+const roomName = ref('')
+const roomDescription = ref('')
+const roomCategory = ref('')
+const newRoomForm = ref(null as any)
+const newRoomUuid = ref(uuidv4())
+
+const editRoom = ref(null as null | Room)
+const editRoomName = ref('')
+const editRoomDescription = ref('')
+const editRoomCategory = ref('')
+const editRoomForm = ref(null as any)
+
+const editRoomSettings = ref(null as null | Room)
+const bytesUsed = ref(0)
+const joinChannel = ref('')
+const joinMessage = ref('')
+const rulesText = ref('')
 
 const rooms = computed(() => {
     return roomSelector.rooms.value
@@ -41,29 +65,7 @@ const roomCategories = computed(() => {
     return roomTypesCtrl.roomCategories.value
 })
 
-const showUploads = ref(false)
-const showRules = ref(false)
-
-const newRoom = ref(false)
-const roomName = ref('')
-const roomDescription = ref('')
-const roomCategory = ref('')
-const newRoomForm = ref(null)
-const newRoomUuid = ref(uuidv4())
-
-const editRoom = ref(null)
-const editRoomName = ref('')
-const editRoomDescription = ref('')
-const editRoomCategory = ref('')
-const editRoomForm = ref(null)
-
-const editRoomSettings = ref(null)
-const bytesUsed = ref(0)
-const joinChannel = ref('')
-const joinMessage = ref('')
-const rulesText = ref('')
-
-const startEditRoomSettings = async (room) => {
+const startEditRoomSettings = async (room: Room): Promise<void> => {
     editRoomSettings.value = room
     joinChannel.value = room.setting.join_channel_uuid
     joinMessage.value = room.setting.join_message
@@ -71,17 +73,17 @@ const startEditRoomSettings = async (room) => {
 
     const bytesData = await channelCtrl.messageUploads.bytesUsed(room.uuid)
     const bytesMB = (bytesData?.bytes_used || 0) / 1024 / 1024;
-    bytesUsed.value = bytesMB.toFixed(2)
+    bytesUsed.value = parseFloat(bytesMB.toFixed(2))
 }
 
-const startEditRoom = (room) => {
+const startEditRoom = (room: Room): void => {
     editRoom.value = room
     editRoomName.value = room.name
     editRoomDescription.value = room.description
     editRoomCategory.value = room.room_category_name
 }
 
-const createRoom = async () => {
+const createRoom = async (): Promise<void> => {
     if (!roomName.value) {
         toastCtrl.add('Name is required', 'error')
         return
@@ -97,7 +99,7 @@ const createRoom = async () => {
 
     try {
         await roomCtrl.create({}, newRoomForm.value)
-    } catch (error) {
+    } catch (error: any) {
         toastCtrl.add(error.message, 'error')
         newRoomUuid.value = uuidv4()
         return
@@ -112,7 +114,7 @@ const createRoom = async () => {
     roomSelector.fetchRooms()
 }
 
-const updateRoom = async () => {
+const updateRoom = async (): Promise<void> => {
     if (!editRoomName.value) {
         toastCtrl.add('Name is required', 'error')
         return
@@ -127,8 +129,8 @@ const updateRoom = async () => {
     }
 
     try {
-        await roomCtrl.update(editRoom.value.uuid, {}, editRoomForm.value)
-    } catch (error) {
+        await roomCtrl.update(editRoom.value?.uuid, {}, editRoomForm.value)
+    } catch (error: any) {
         toastCtrl.add(error.message, 'error')
         return
     }
@@ -139,15 +141,13 @@ const updateRoom = async () => {
     roomSelector.fetchRooms()
 }
 
-const deleteRoom = async (room) => {
+const deleteRoom = async (room: Room): Promise<void> => {
     try {
         await roomCtrl.delete(room.uuid)
-    } catch (error) {
+    } catch (error: any) {
         toastCtrl.add(error.message, 'error')
         return
     }
-    const { data } = await roomCtrl.findAll()
-    rooms.value = data
 
     await roomSelector.setRoom(null)
     await channelSelector.setChannel(null)
@@ -155,11 +155,11 @@ const deleteRoom = async (room) => {
     toastCtrl.add('Room deleted', 'success')
 }
 
-const showRoom = async (room) => {
+const showRoom = async (room: Room): Promise<void> => {
     await roomSelector.setRoom(room)
 }
 
-const leaveRoom = async () => {
+const leaveRoom = async (): Promise<void> => {
     const uuid = userRoom.value?.uuid
     if (!uuid) {
         toastCtrl.add('You are not in a room', 'error')
@@ -168,7 +168,7 @@ const leaveRoom = async () => {
 
     try {
         await roomCtrl.userRooms.delete(uuid)
-    } catch (error) {
+    } catch (error: any) {
         toastCtrl.add(error.message, 'error')
         return
     }
@@ -181,7 +181,7 @@ const leaveRoom = async () => {
     toastCtrl.add('Room left', 'success')
 }
 
-const updateRoomSettings = async () => {
+const updateRoomSettings = async (): Promise<void> => {
     if (!joinChannel) {
         toastCtrl.add('Join Channel is required', 'error')
         return
@@ -196,12 +196,12 @@ const updateRoomSettings = async () => {
     }
 
     try {
-        await roomCtrl.roomSettings.update(editRoomSettings.value.setting.uuid, {
+        await roomCtrl.roomSettings.update(editRoomSettings.value?.setting.uuid, {
             join_channel_uuid: joinChannel.value,
             join_message: joinMessage.value,
             rules_text: rulesText.value
         })
-    } catch (error) {
+    } catch (error: any) {
         toastCtrl.add(error.message, 'error')
         return
     }
@@ -241,7 +241,7 @@ onMounted(async () => {
 
                 <div class="border-b border-gray-800 pb-3 mb-3 flex flex-col gap-2">
                     <div>
-                        {{ room.setting.rules_text }}
+                        {{ room?.setting.rules_text }}
                     </div>
                 </div>
 
@@ -411,7 +411,7 @@ onMounted(async () => {
                         <button type="submit" class="p-2 mr-2 bg-indigo-500 hover:bg-indigo-600 rounded-md text-white">
                             Create Room
                         </button>
-                        <button type="button" @click="newRoom = null"
+                        <button type="button" @click="newRoom = false"
                             class="p-2 bg-slate-500 hover:bg-slate-600 rounded-md text-white">
                             Cancel
                         </button>
@@ -567,7 +567,7 @@ onMounted(async () => {
                                 </svg>
                             </button>
 
-                            <button @click="leaveRoom(room)" v-if="!isAdmin" title="Leave Room"
+                            <button @click="leaveRoom()" v-if="!isAdmin" title="Leave Room"
                                 class="p-1 text-xs rounded-md bg-red-700 hover:bg-red-600 focus:outline-none text-white">
                                 <!--!Font Awesome Free 6.6.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2024 Fonticons, Inc.-->
                                 <svg xmlns="http://www.w3.org/2000/svg" fill="white" width="11" viewBox="0 0 576 512">
@@ -581,23 +581,6 @@ onMounted(async () => {
                         <h2 class="text-xs font-bold text-white mb-3">
                             No Room Selected
                         </h2>
-
-                        <div class="flex gap-2">
-                            <button @click="toggleShowEditUser()" title="Edit User"
-                                class="p-1 text-xs rounded-md bg-indigo-700 hover:bg-indigo-600 focus:outline-none text-white">
-                                <!--!Font Awesome Free 6.6.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2024 Fonticons, Inc.-->
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="white" width="11" viewBox="0 0 448 512">
-                                    <path
-                                        d="M304 128a80 80 0 1 0 -160 0 80 80 0 1 0 160 0zM96 128a128 128 0 1 1 256 0A128 128 0 1 1 96 128zM49.3 464l349.5 0c-8.9-63.3-63.3-112-129-112l-91.4 0c-65.7 0-120.1 48.7-129 112zM0 482.3C0 383.8 79.8 304 178.3 304l91.4 0C368.2 304 448 383.8 448 482.3c0 16.4-13.3 29.7-29.7 29.7L29.7 512C13.3 512 0 498.7 0 482.3z" />
-                                </svg>
-                            </button>
-
-                            <button @click="logout()"
-                                class="p-1 text-xs rounded-md bg-red-700 hover:bg-red-600 focus:outline-none text-white">
-                                <!--!Font Awesome Free 6.6.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2024 Fonticons, Inc.-->
-                                Logout
-                            </button>
-                        </div>
                     </div>
                 </div>
 

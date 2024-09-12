@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import Content from '@/components/Content.vue';
-import { useUser } from '@/composables/useUser.js'
-import { useToast } from '@/composables/useToast.js'
 import router from '@/router';
+import Content from '@/components/Content.vue';
+import { useUser } from '@/composables/useUser'
+import { useToast } from '@/composables/useToast'
 import { ref } from 'vue'
 
 const email = ref('')
@@ -10,7 +10,8 @@ const password = ref('')
 
 const userCtrl = useUser()
 const toastCtrl = useToast()
-const login = async () => {
+
+const login = async (): Promise<void> => {
   if (!email.value) {
     toastCtrl.add('Please enter email', 'error')
     return
@@ -28,7 +29,7 @@ const login = async () => {
     })
 
     router.push({ name: 'home' })
-  } catch (error) {
+  } catch (error: any) {
     toastCtrl.add(error, 'error')
   }
 }

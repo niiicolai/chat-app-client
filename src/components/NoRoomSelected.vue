@@ -22,6 +22,6 @@
     </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
     const GENERAL_CHAT_LINK = import.meta.env.VITE_MAIN_CHAT_LINK
 </script>

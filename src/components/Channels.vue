@@ -1,15 +1,12 @@
-<script setup>
-import Scroll from '@/components/Scroll.vue'
+<script setup lang="ts">
+import type Channel from '@/models/channel'
+import { useChannelSelector } from '@/composables/useChannelSelector'
+import { useChannelTypes } from '@/composables/useChannelTypes'
+import { useRoomSelector } from '@/composables/useRoomSelector'
+import { useChannel } from '@/composables/useChannel'
+import { useToast } from '@/composables/useToast'
+import { ref, computed } from 'vue'
 
-import { useChannelSelector } from '@/composables/useChannelSelector.js'
-import { useChannelTypes } from '@/composables/useChannelTypes.js'
-import { useRoomSelector } from '@/composables/useRoomSelector.js'
-import { useChannel } from '@/composables/useChannel.js'
-import { useToast } from '@/composables/useToast.js'
-import { useUser } from '@/composables/useUser.js'
-import { ref, computed, onMounted } from 'vue'
-
-const userCtrl = useUser()
 const toastCtrl = useToast()
 const channelCtrl = useChannel()
 const channelSelector = useChannelSelector()
@@ -20,7 +17,7 @@ const isAdmin = computed(() => {
     return roomSelector.hasRole('Admin')
 })
 
-const showChannel = async (channel) => {
+const showChannel = async (channel: Channel) => {
     await channelSelector.setChannel(channel)
 }
 
@@ -41,7 +38,7 @@ const channelName = ref('')
 const channelDescription = ref('')
 const channelType = ref('')
 
-const editChannel = ref(null)
+const editChannel = ref(null as Channel | null)
 const editChannelName = ref('')
 const editChannelDescription = ref('')
 const editChannelType = ref('')
@@ -50,7 +47,7 @@ const startNewChannel = () => {
     newChannel.value = true
 }
 
-const startEditChannel = (channel) => {
+const startEditChannel = (channel: Channel) => {
     editChannel.value = channel
     editChannelName.value = channel.name
     editChannelDescription.value = channel.description
@@ -76,9 +73,9 @@ const createChannel = async () => {
             name: channelName.value,
             description: channelDescription.value,
             channel_type_name: channelType.value,
-            room_uuid: roomSelector.room.value.uuid
+            room_uuid: roomSelector.room.value?.uuid
         })
-    } catch (error) {
+    } catch (error: any) {
         toastCtrl.add(error.message, 'error')
         return
     }
@@ -105,14 +102,19 @@ const updateChannel = async () => {
         return
     }
 
+    if (!editChannel) {
+        toastCtrl.add('Channel not found', 'error')
+        return
+    }
+
     try {
-        await channelCtrl.update(editChannel.value.uuid, {
+        await channelCtrl.update(editChannel.value?.uuid, {
             name: editChannelName.value,
             description: editChannelDescription.value,
             channel_type_name: editChannelType.value,
-            room_uuid: roomSelector.room.value.uuid
+            room_uuid: roomSelector.room.value?.uuid
         })
-    } catch (error) {
+    } catch (error: any) {
         toastCtrl.add(error.message, 'error')
         return
     }
@@ -126,10 +128,10 @@ const updateChannel = async () => {
     channelSelector.reinit()
 }
 
-const deleteChannel = async (channel) => {
+const deleteChannel = async (channel: Channel) => {
     try {
         await channelCtrl.delete(channel.uuid)
-    } catch (error) {
+    } catch (error: any) {
         toastCtrl.add(error.message, 'error')
         return
     }
@@ -194,7 +196,7 @@ const deleteChannel = async (channel) => {
                         class="p-2 mr-2 bg-indigo-500 hover:bg-indigo-600 rounded-md text-white">
                         Create Channel
                     </button>
-                    <button @click="newChannel = null"
+                    <button @click="newChannel = false"
                         class="p-2 bg-slate-500 hover:bg-slate-600 rounded-md text-white">
                         Cancel
                     </button>

@@ -1,15 +1,25 @@
-<script setup>
-import { useToast } from '@/composables/useToast.js'
-import { useRoomSelector } from '@/composables/useRoomSelector.js'
-import { useChannelSelector } from '@/composables/useChannelSelector.js'
-import { useChannel } from '@/composables/useChannel.js'
+<script setup lang="ts">
+import { useToast } from '@/composables/useToast'
+import { useRoomSelector } from '@/composables/useRoomSelector'
+import { useChannelSelector } from '@/composables/useChannelSelector'
+import { useChannel } from '@/composables/useChannel'
 import { ref, computed } from 'vue'
+import type ChannelWebhook from '@/models/channel_webhook'
+import type Channel from '@/models/channel'
 
 const API_URL = import.meta.env.VITE_API_URL
 const toastCtrl = useToast()
 const roomSelector = useRoomSelector()
 const channelSelector = useChannelSelector()
 const channelCtrl = useChannel()
+
+const testWebhook = ref(null as ChannelWebhook | null)
+const testMessage = ref('')
+const testResponse = ref('')
+
+const channelUuid = ref('')
+const editWebhook = ref(null as ChannelWebhook | null)
+const editWebhookchannelUuid = ref('')
 
 const webhooks = computed(() => {
     return roomSelector.webhooks.value
@@ -27,21 +37,13 @@ const isAdmin = computed(() => {
     return roomSelector.hasRole('Admin')
 })
 
-const testWebhook = ref(null)
-const testMessage = ref('')
-const testResponse = ref('')
-
-const channelUuid = ref('')
-const editWebhook = ref(null)
-const editWebhookchannelUuid = ref('')
-
-const startEditWebhook = (webhook) => {
+const startEditWebhook = (webhook: ChannelWebhook): void => {
     editWebhook.value = webhook
     editWebhookchannelUuid.value = webhook.channel_uuid
     testWebhook.value = null
 }
 
-const updateWebhook = async () => {
+const updateWebhook = async (): Promise<void> => {
     if (!editWebhookchannelUuid.value) {
         return toastCtrl.add('Channel is required', 'error')
     }
@@ -53,7 +55,7 @@ const updateWebhook = async () => {
         await channelCtrl.webhooks.update(editWebhook.value.uuid, {
             channel_uuid: editWebhookchannelUuid.value
         })
-    } catch (error) {
+    } catch (error: any) {
         toastCtrl.add(error.message, 'error')
         return
     }
@@ -63,7 +65,7 @@ const updateWebhook = async () => {
     toastCtrl.add('Webhook updated', 'success')
 }
 
-const createWebhook = async () => {
+const createWebhook = async (): Promise<void> => {
     if (!channelUuid.value) {
         return toastCtrl.add('Channel is required', 'error')
     }
@@ -71,7 +73,7 @@ const createWebhook = async () => {
     const channel_uuid = channelUuid.value
     try {
         await channelCtrl.webhooks.create({ channel_uuid })
-    } catch (error) {
+    } catch (error: any) {
         toastCtrl.add(error.message, 'error')
         return
     }
@@ -81,10 +83,10 @@ const createWebhook = async () => {
     toastCtrl.add('Webhook created', 'success')
 }
 
-const deleteWebhook = async (webhook) => {
+const deleteWebhook = async (webhook: ChannelWebhook): Promise<void> => {
     try {
         await channelCtrl.webhooks.delete(webhook.uuid)
-    } catch (error) {
+    } catch (error: any) {
         toastCtrl.add(error.message, 'error')
         return
     }
@@ -93,12 +95,12 @@ const deleteWebhook = async (webhook) => {
     toastCtrl.add('Webhook deleted', 'success')
 }
 
-const startTestWebhook = (webhook) => {
+const startTestWebhook = (webhook: ChannelWebhook): void => {
     testWebhook.value = webhook
     editWebhook.value = null
 }
 
-const executeTest = async () => {
+const executeTest = async (): Promise<void> => {
     if (!testMessage.value) {
         return toastCtrl.add('Message is required', 'error')
     }
@@ -110,7 +112,7 @@ const executeTest = async () => {
         const response = await channelCtrl.webhooks.event(
             testWebhook.value.uuid, { message: testMessage.value })
         testResponse.value = response
-    } catch (error) {
+    } catch (error: any) {
         toastCtrl.add(error.message, 'error')
         return
     }
@@ -118,19 +120,22 @@ const executeTest = async () => {
     toastCtrl.add('Webhook test sent', 'success')
 }
 
-const getLink = (webhook) => {
+const getLink = (webhook: ChannelWebhook): string => {
     const url = `${API_URL}/channel_webhook/${webhook.uuid}`
     return url
 }
-const copyLink = (link) => {
-    const url = getLink(link)
+
+const copyLink = (webhook: ChannelWebhook): void => {
+    const url = getLink(webhook)
 
     navigator.clipboard.writeText(url)
     toastCtrl.add('Webhook URL copied', 'success')
 }
-const getChannel = (channelUuid) => {
-    return channels.value.find((channel) => channel.uuid === channelUuid)
+
+const getChannel = (channelUuid: string): Channel | undefined => {
+    return channels.value.find((channel: Channel) => channel.uuid === channelUuid)
 }
+
 </script>
 
 <template>

@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import { RouterLink, RouterView, RouteLocationNormalized } from 'vue-router'
-import Toast from '@/components/Toast.vue'
 
-import { useToast } from '@/composables/useToast.js'
-import { useUser } from '@/composables/useUser.js'
-import { useChannelTypes } from '@/composables/useChannelTypes.js'
-import { useRoomTypes } from '@/composables/useRoomTypes'
 import router from '@/router';
+import Toast from '@/components/Toast.vue'
+import { RouterLink, RouterView, type RouteLocationNormalized } from 'vue-router'
+import { useToast } from '@/composables/useToast'
+import { useUser } from '@/composables/useUser'
+import { useChannelTypes } from '@/composables/useChannelTypes'
+import { useRoomTypes } from '@/composables/useRoomTypes'
 import { onMounted } from 'vue'
  
 const publicRoutes = ['login', 'register']

@@ -1,10 +1,11 @@
-<script setup>
-import { useToast } from '@/composables/useToast.js'
-import { useRoom } from '@/composables/useRoom.js'
-import { useRoomSelector } from '@/composables/useRoomSelector.js'
-import { useChannelSelector } from '@/composables/useChannelSelector.js'
-import { useUser } from '@/composables/useUser.js'
+<script setup lang="ts">
+import { useToast } from '@/composables/useToast'
+import { useRoom } from '@/composables/useRoom'
+import { useRoomSelector } from '@/composables/useRoomSelector'
+import { useChannelSelector } from '@/composables/useChannelSelector'
+import { useUser } from '@/composables/useUser'
 import { ref, computed, onMounted } from 'vue'
+import type UserRoom from '@/models/user_room'
 
 const toastCtrl = useToast()
 const roomCtrl = useRoom()
@@ -35,7 +36,7 @@ const isModerator = computed(() => {
     return roomSelector.hasRole('Moderator')
 })
 
-const setUserRoomRole = async (uuid, room_role_name) => {
+const setUserRoomRole = async (uuid: string, room_role_name: string): Promise<void> => {
     if (!isAdmin.value && !isModerator.value) {
         toastCtrl.add('You are not an admin or moderator', 'error')
         return
@@ -50,7 +51,7 @@ const setUserRoomRole = async (uuid, room_role_name) => {
     }
     try {
         await roomCtrl.userRooms.update(uuid, { room_role_name })
-    } catch (error) {
+    } catch (error: any) {
         toastCtrl.add(error.message, 'error')
         return
     }
@@ -59,7 +60,7 @@ const setUserRoomRole = async (uuid, room_role_name) => {
     await roomSelector.reinitUserRooms()
 }
 
-const destroyUserRoom = async (userRoom) => {
+const destroyUserRoom = async (userRoom: UserRoom): Promise<void> => {
     if (!isAdmin.value && !isModerator.value) {
         toastCtrl.add('You are not an admin or moderator', 'error')
         return
@@ -70,7 +71,7 @@ const destroyUserRoom = async (userRoom) => {
     }
     try {
         await roomCtrl.userRooms.delete(userRoom.uuid)
-    } catch (error) {
+    } catch (error: any) {
         toastCtrl.add(error.message, 'error')
         return
     }

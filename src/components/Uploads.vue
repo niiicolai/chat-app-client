@@ -62,7 +62,8 @@
                 </div>
 
                 <div>
-                    <button @click="close" class="p-2 bg-slate-500 hover:bg-slate-600 rounded-md text-white">
+                    <button @click="() => close()"
+                        class="p-2 bg-slate-500 hover:bg-slate-600 rounded-md text-white">
                         Close
                     </button>
                 </div>
@@ -71,11 +72,11 @@
     </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import MessageUpload from '@/components/MessageUpload.vue'
-import { useRoomSelector } from '@/composables/useRoomSelector.js'
-import { useToast } from '@/composables/useToast.js'
-import { useChannel } from '@/composables/useChannel.js'
+import { useRoomSelector } from '@/composables/useRoomSelector'
+import { useToast } from '@/composables/useToast'
+import { useChannel } from '@/composables/useChannel'
 import { computed } from 'vue'
 
 const props = defineProps({
@@ -85,7 +86,8 @@ const props = defineProps({
     },
     close: {
         type: Function,
-        required: false
+        required: false,
+        default: () => { }
     }
 })
 
@@ -101,10 +103,10 @@ const isAdmin = computed(() => {
     return roomSelector.hasRole('Admin')
 })
 
-const deleteUpload = async (uuid) => {
+const deleteUpload = async (uuid: string) => {
     try {
         await channelCtrl.messageUploads.delete(uuid)
-    } catch (error) {
+    } catch (error: any) {
         toastCtrl.add(error.message, 'error')
         return
     }
