@@ -135,7 +135,6 @@ export function useRoomSelector() : RoomSelector {
             .webhooks
             .findAll({ room_uuid: newRoom.uuid }) as { data: Webhook[] }
 
-            console.log(webhooksData)
         webhooks.value = webhooksData
     }
 
