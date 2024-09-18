@@ -130,7 +130,7 @@ onMounted(async () => {
                                 </div>
                             </div>
 
-                            <div v-if="isAdmin || isModerator" class="grid grid-cols-2 gap-1">
+                            <div v-if="userRoom.user.uuid !== sub && (isAdmin || isModerator)" class="grid grid-cols-2 gap-1">
                                 <button v-if="isAdmin" @click="setUserRoomRole(userRoom.uuid, 'Admin')" title="Set as Admin"
                                     class="p-1 text-xs rounded-md bg-indigo-700 hover:bg-indigo-600 focus:outline-none text-white">
                                     ADM
@@ -174,12 +174,14 @@ onMounted(async () => {
             </div>
         </div>
 
-        <div class="bg-black w-full border-b border-gray-800 p-3 h-20 overflow-hidden"
-            v-if="userRooms && userRooms.length > 0">
+        <div class="bg-black w-full border-b border-gray-800 p-3 h-20 overflow-hidden">
             <div v-if="channel" class="text-white text-xs mb-1 overflow-hidden truncate ...">
                 {{ channel.description }}
             </div>
-            <div>
+            <div v-else class="text-white text-xs mb-1 overflow-hidden truncate ...">
+                No description
+            </div>
+            <div v-if="userRooms && userRooms.length > 0">
                 <div class="flex items-center h-10 overflow-hidden gap-3">
                     <button @click="displayAllMembers = true" title="All"
                         class="bg-indigo-700 hover:bg-indigo-500 w-6 h-6 flex items-center justify-center rounded-full">
