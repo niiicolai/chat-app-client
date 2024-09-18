@@ -29,6 +29,7 @@ onMounted(async () => {
   await channelTypesCtrl.init()
   await roomTypesCtrl.init()
 })
+
 </script>
 
 <template>
