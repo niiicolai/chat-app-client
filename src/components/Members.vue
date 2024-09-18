@@ -36,12 +36,12 @@ const isModerator = computed(() => {
     return roomSelector.hasRole('Moderator')
 })
 
-const setUserRoomRole = async (uuid: string, room_role_name: string): Promise<void> => {
+const setUserRoomRole = async (uuid: string, room_user_role_name: string): Promise<void> => {
     if (!isAdmin.value && !isModerator.value) {
         toastCtrl.add('You are not an admin or moderator', 'error')
         return
     }
-    if (!room_role_name) {
+    if (!room_user_role_name) {
         toastCtrl.add('Role name is required', 'error')
         return
     }
@@ -50,13 +50,13 @@ const setUserRoomRole = async (uuid: string, room_role_name: string): Promise<vo
         return
     }
     try {
-        await roomCtrl.userRooms.update(uuid, { room_role_name })
+        await roomCtrl.userRooms.update(uuid, { room_user_role_name })
     } catch (error: any) {
         toastCtrl.add(error.message, 'error')
         return
     }
 
-    toastCtrl.add('User role set to ' + room_role_name, 'success')
+    toastCtrl.add('User role set to ' + room_user_role_name, 'success')
     await roomSelector.reinitUserRooms()
 }
 
@@ -125,7 +125,7 @@ onMounted(async () => {
                                     <div
                                         style="font-size: 0.6em;"
                                         class="text-white text-indigo-500 text-xs overflow-hidden font-bold">
-                                        {{ userRoom.room_role_name }}
+                                        {{ userRoom.room_user_role_name }}
                                     </div>
                                 </div>
                             </div>
@@ -143,7 +143,7 @@ onMounted(async () => {
                                     class="p-1 text-xs rounded-md bg-indigo-700 hover:bg-indigo-600 focus:outline-none text-white">
                                     MEM
                                 </button>
-                                <button v-if="userRoom.room_role_name === 'Member'" @click="destroyUserRoom(userRoom)" title="Kick"
+                                <button v-if="userRoom.room_user_role_name === 'Member'" @click="destroyUserRoom(userRoom)" title="Kick"
                                     class="p-1 text-xs rounded-md bg-red-700 hover:bg-red-600 focus:outline-none text-white flex items-center justify-center">
                                     <!--!Font Awesome Free 6.6.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2024 Fonticons, Inc.-->
                                     <svg xmlns="http://www.w3.org/2000/svg" fill="white" width="18"

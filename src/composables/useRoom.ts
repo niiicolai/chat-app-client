@@ -11,22 +11,37 @@ interface RoomInviteLinks extends CrudAPI {
 }
 interface UserRooms extends CrudAPI {
 }
-interface RoomSettings extends CrudAPI {
+
+interface RoomFiles extends CrudAPI {
 }
 
 const api = useAPI();
 
-const crudAPI = api.crudAPI('room', 'rooms', {
-    findAll: true,
-    findOne: true,
-    template: false,
-    create: true,
-    update: true,
-    delete: true
-}) as Rooms;
+const crudAPI = {
+    ...api.crudAPI('room', 'rooms', {
+        findAll: true,
+        findOne: true,
+        template: false,
+        create: true,
+        update: true,
+        delete: true
+    }) as Rooms,
+    editSettings: async (room_uuid: string, data: object) => {
+        return api.fetchAPI(`/room/${room_uuid}/settings`,
+            { method: 'PATCH', body: JSON.stringify(data) },
+            true
+        );
+    },
+    leave: async (room_uuid: string) => {
+        return api.fetchAPI(`/room/${room_uuid}/leave`,
+            { method: 'DELETE' },
+            true
+        );
+    },
+} as Rooms;
 
 const roles = {
-    ...api.crudAPI('room_role', 'room_roles', {
+    ...api.crudAPI('room_user_role', 'room_user_roles', {
         findAll: false,
         findOne: false,
         template: false,
@@ -50,7 +65,7 @@ const categories = {
 const inviteLinks = {
     ...api.crudAPI('room_invite_link', 'room_invite_links', {
         findAll: true,
-        findOne: false,
+        findOne: true,
         template: false,
         create: true,
         update: true,
@@ -60,7 +75,7 @@ const inviteLinks = {
         if (!uuid) {
             throw new Error('uuid are required');
         }
-        return api.fetchAPI(`/join_link/${uuid}`,
+        return api.fetchAPI(`/room_invite_link/${uuid}/join`,
             { method: 'POST' },
             true
         );
@@ -68,7 +83,7 @@ const inviteLinks = {
 } as RoomInviteLinks;
 
 const userRooms = {
-    ...api.crudAPI('user_room', 'user_rooms', {
+    ...api.crudAPI('room_user', 'room_users', {
         findAll: true,
         findOne: true,
         template: false,
@@ -78,8 +93,8 @@ const userRooms = {
     })
 } as UserRooms;
 
-const roomSettings = {
-    ...api.crudAPI('room_setting', 'room_settings', {
+const roomFiles = {
+    ...api.crudAPI('room_file', 'room_files', {
         findAll: true,
         findOne: true,
         template: false,
@@ -87,7 +102,7 @@ const roomSettings = {
         update: true,
         delete: true
     })
-} as RoomSettings;
+} as RoomFiles;
 
 const methods = {
     ...crudAPI,
@@ -95,7 +110,7 @@ const methods = {
     categories,
     inviteLinks,
     userRooms,
-    roomSettings
+    roomFiles
 };
 
 export function useRoom(): any {

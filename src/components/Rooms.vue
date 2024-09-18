@@ -10,7 +10,6 @@ import { useChannel } from '@/composables/useChannel'
 import { ref, computed, onMounted } from 'vue'
 import { v4 as uuidv4 } from 'uuid'
 import type Room from '@/models/room'
-import type RoomSetting from '@/models/room_setting'
 
 const toastCtrl = useToast()
 const roomCtrl = useRoom()
@@ -36,7 +35,6 @@ const editRoomCategory = ref('')
 const editRoomForm = ref(null as any)
 
 const editRoomSettings = ref(null as null | Room)
-const bytesUsed = ref(0)
 const joinChannel = ref('')
 const joinMessage = ref('')
 const rulesText = ref('')
@@ -67,13 +65,9 @@ const roomCategories = computed(() => {
 
 const startEditRoomSettings = async (room: Room): Promise<void> => {
     editRoomSettings.value = room
-    joinChannel.value = room.setting.join_channel_uuid
-    joinMessage.value = room.setting.join_message
-    rulesText.value = room.setting.rules_text
-
-    const bytesData = await channelCtrl.messageUploads.bytesUsed(room.uuid)
-    const bytesMB = (bytesData?.bytes_used || 0) / 1024 / 1024;
-    bytesUsed.value = parseFloat(bytesMB.toFixed(2))
+    joinChannel.value = room.joinSettings.channelUuid
+    joinMessage.value = room.joinSettings.message
+    rulesText.value = room.rulesSettings.text
 }
 
 const startEditRoom = (room: Room): void => {
@@ -100,6 +94,7 @@ const createRoom = async (): Promise<void> => {
     try {
         await roomCtrl.create({}, newRoomForm.value)
     } catch (error: any) {
+        console.log(error)
         toastCtrl.add(error.message, 'error')
         newRoomUuid.value = uuidv4()
         return
@@ -160,14 +155,14 @@ const showRoom = async (room: Room): Promise<void> => {
 }
 
 const leaveRoom = async (): Promise<void> => {
-    const uuid = userRoom.value?.uuid
-    if (!uuid) {
+    const room_uuid = roomSelector.room.value?.uuid
+    if (!room_uuid) {
         toastCtrl.add('You are not in a room', 'error')
         return
     }
 
     try {
-        await roomCtrl.userRooms.delete(uuid)
+        await roomCtrl.leave(room_uuid)
     } catch (error: any) {
         toastCtrl.add(error.message, 'error')
         return
@@ -178,7 +173,7 @@ const leaveRoom = async (): Promise<void> => {
     await channelSelector.setChannel(null)
     await roomSelector.fetchRooms()
 
-    toastCtrl.add('Room left', 'success')
+    toastCtrl.add('Left room', 'success')
 }
 
 const updateRoomSettings = async (): Promise<void> => {
@@ -196,7 +191,8 @@ const updateRoomSettings = async (): Promise<void> => {
     }
 
     try {
-        await roomCtrl.roomSettings.update(editRoomSettings.value?.setting.uuid, {
+        const room_uuid = roomSelector.room.value?.uuid;
+        await roomCtrl.editSettings(room_uuid, {
             join_channel_uuid: joinChannel.value,
             join_message: joinMessage.value,
             rules_text: rulesText.value
@@ -212,6 +208,18 @@ const updateRoomSettings = async (): Promise<void> => {
     roomSelector.fetchRooms()
 }
 
+const deleteRoomAvatarFile = async (room_file_uuid: string) => {
+    try {
+        await roomCtrl.roomFiles.delete(room_file_uuid)
+    } catch (error: any) {
+        toastCtrl.add(error.message, 'error')
+        return
+    }
+    editRoom.value = null
+    await roomSelector.fetchRooms()
+    toastCtrl.add('Room Avatar deleted', 'success')
+}
+
 onMounted(async () => {
     await roomSelector.fetchRooms()
     if (rooms.value.length > 0) {
@@ -222,7 +230,7 @@ onMounted(async () => {
 
 <template>
     <div>
-        
+
         <Uploads :display="showUploads" :close="() => showUploads = false" />
 
         <div v-if="showRules" style="z-index:3;"
@@ -241,7 +249,7 @@ onMounted(async () => {
 
                 <div class="border-b border-gray-800 pb-3 mb-3 flex flex-col gap-2">
                     <div>
-                        {{ room?.setting.rules_text }}
+                        {{ room?.rulesSettings.text }}
                     </div>
                 </div>
 
@@ -255,7 +263,7 @@ onMounted(async () => {
         </div>
 
         <div v-if="editRoomSettings" style="z-index:3;"
-            class="fixed top-0 left-0 w-full h-full bg-gray-800 bg-opacity-50 flex items-center justify-center">
+            class="fixed top-0 left-0 w-full h-full bg-gray-800 bg-opacity-50 flex items-start justify-center overflow-y-auto">
             <div class="w-96 bg-black text-white p-4 rounded-md">
                 <div class="border-b border-gray-800 pb-3 mb-3">
                     <h3 class="text-3xl font-bold mb-1">
@@ -273,7 +281,7 @@ onMounted(async () => {
                             Max Channels
                         </div>
                         <div>
-                            {{ editRoomSettings.setting.max_channels }}
+                            {{ editRoomSettings.channelSettings.maxChannels }}
                         </div>
                     </div>
                     <div class="text-md flex gap-3 items-center justify-between bg-gray-800 p-3 mb-1">
@@ -281,24 +289,39 @@ onMounted(async () => {
                             Max Members
                         </div>
                         <div>
-                            {{ editRoomSettings.setting.max_members }}
+                            {{ editRoomSettings.userSettings.maxUsers }}
                         </div>
                     </div>
                     <div class="text-md flex gap-3 items-center justify-between bg-gray-800 p-3 mb-1">
                         <div>
-                            Total Uploads Size
+                            Message Retention Days
                         </div>
                         <div>
-                            {{ bytesUsed }} /
-                            {{ (editRoomSettings.setting.total_upload_bytes / 1024 / 1024).toFixed(2) }} MB
+                            {{ editRoomSettings.channelSettings.messagesDaysToLive }}
+                        </div>
+                    </div>
+                    <div class="text-md flex gap-3 items-center justify-between bg-gray-800 p-3 mb-1">
+                        <div>
+                            Message Upload Retention Days
+                        </div>
+                        <div>
+                            {{ editRoomSettings.fileSettings.fileDaysToLive }}
+                        </div>
+                    </div>
+                    <div class="text-md flex gap-3 items-center justify-between bg-gray-800 p-3 mb-1">
+                        <div>
+                            Total File Upload Size
+                        </div>
+                        <div>
+                            {{ editRoomSettings.mb_used }} / {{ editRoomSettings.fileSettings.totalFilesMb }} MB
                         </div>
                     </div>
                     <div class="text-md flex gap-3 items-center justify-between bg-gray-800 p-3 mb-3">
                         <div>
-                            Message Upload Size
+                            Single File Upload Size
                         </div>
                         <div>
-                            {{ (editRoomSettings.setting.upload_bytes / 1024 / 1024).toFixed(2) }} MB
+                            {{ editRoomSettings.fileSettings.singleFileMb }} MB
                         </div>
                     </div>
                 </div>
@@ -427,7 +450,6 @@ onMounted(async () => {
                     <h3 class="text-3xl font-bold mb-1">
                         Edit Room
                     </h3>
-
                     <p class="text-md">
                         Give your room a new look and feel by updating its details.
                     </p>
@@ -451,6 +473,20 @@ onMounted(async () => {
                             </small>
                             <input type="file" placeholder="avatar" name="file"
                                 class="w-full p-2 border border-gray-300 rounded-md text-white" />
+                            <div v-if="editRoom?.avatar && editRoom?.avatar.room_file"
+                                class="flex items-center gap-2 mt-2">
+                                <img :src="editRoom.avatar.room_file.src" class="w-12 h-12 rounded-full" />
+                                <button @click="deleteRoomAvatarFile(editRoom.avatar.room_file.uuid)" type="button" title="Delete Avatar"
+                                    class="p-2 bg-red-500 hover:bg-red-600 rounded-md text-white">
+                                    <!--!Font Awesome Free 6.6.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2024 Fonticons, Inc.-->
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="white" width="11"
+                                        viewBox="0 0 448 512">
+                                        <path
+                                            d="M170.5 51.6L151.5 80l145 0-19-28.4c-1.5-2.2-4-3.6-6.7-3.6l-93.7 0c-2.7 0-5.2 1.3-6.7 3.6zm147-26.6L354.2 80 368 80l48 0 8 0c13.3 0 24 10.7 24 24s-10.7 24-24 24l-8 0 0 304c0 44.2-35.8 80-80 80l-224 0c-44.2 0-80-35.8-80-80l0-304-8 0c-13.3 0-24-10.7-24-24S10.7 80 24 80l8 0 48 0 13.8 0 36.7-55.1C140.9 9.4 158.4 0 177.1 0l93.7 0c18.7 0 36.2 9.4 46.6 24.9zM80 128l0 304c0 17.7 14.3 32 32 32l224 0c17.7 0 32-14.3 32-32l0-304L80 128zm80 64l0 208c0 8.8-7.2 16
+                                            -16 16s-16-7.2-16-16l0-208c0-8.8 7.2-16 16-16s16 7.2 16 16zm80 0l0 208c0 8.8-7.2 16-16 16s-16-7.2-16-16l0-208c0-8.8 7.2-16 16-16s16 7.2 16 16zm80 0l0 208c0 8.8-7.2 16-16 16s-16-7.2-16-16l0-208c0-8.8 7.2-16 16-16s16 7.2 16 16z" />
+                                    </svg>
+                                </button>
+                            </div>
                         </div>
 
                         <div>
@@ -515,8 +551,7 @@ onMounted(async () => {
                             <button @click="roomSelector.toggleDisplayWebhooks()" title="Show Webhooks" v-if="isAdmin"
                                 class="p-1 text-xs rounded-md bg-indigo-700 hover:bg-indigo-600 focus:outline-none text-white">
                                 <!--!Font Awesome Free 6.6.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2024 Fonticons, Inc.-->
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="white" width="12"
-                                    viewBox="0 0 640 512">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="white" width="12" viewBox="0 0 640 512">
                                     <path
                                         d="M392.8 1.2c-17-4.9-34.7 5-39.6 22l-128 448c-4.9 17 5 34.7 22 39.6s34.7-5 39.6-22l128-448c4.9-17-5-34.7-22-39.6zm80.6 120.1c-12.5 12.5-12.5 32.8 0 45.3L562.7 256l-89.4 89.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0l112-112c12.5-12.5 12.5-32.8 0-45.3l-112-112c-12.5-12.5-32.8-12.5-45.3 0zm-306.7 0c-12.5-12.5-32.8-12.5-45.3 0l-112 112c-12.5 12.5-12.5 32.8 0 45.3l112 112c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L77.3 256l89.4-89.4c12.5-12.5 12.5-32.8 0-45.3z" />
                                 </svg>
@@ -598,7 +633,7 @@ onMounted(async () => {
                                     :class="{
                                         'bg-slate-500': room && roomSelector.room.value && room.uuid === roomSelector.room.value.uuid,
                                     }" :style="{
-                                        'background-image': room.avatar_src ? 'url(' + room.avatar_src + ')' : 'none',
+                                        'background-image': room.avatar && room.avatar.room_file ? 'url(' + room.avatar.room_file.src + ')' : 'none',
                                         'background-size': 'cover',
                                         'background-position': 'center',
                                     }">

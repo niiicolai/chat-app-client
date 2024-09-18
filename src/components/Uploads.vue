@@ -14,25 +14,37 @@
                 </div>
 
                 <div class="border-b border-gray-800 pb-3 mb-3 flex flex-col gap-3"
-                    v-if="messageUploads && messageUploads.length > 0">
-                    <div v-for="upload in messageUploads" :key="upload.uuid" class="bg-slate-800 mb-3 p-3">
+                    v-if="roomFiles && roomFiles.length > 0">
+                    <div v-for="file in roomFiles" :key="file.uuid" class="bg-slate-800 mb-3 p-3">
+                        <div class="flex items-center gap-3 border-b border-gray-600 pb-2 mb-2" v-if="file.user">
+                            <div>
+                                <Avatar :src="file.user.avatar_src" :alternativeName="file.user.username" />
+                            </div>
+
+                            <div class="text-xs">
+                                Uploaded by: {{ file.user.username }}
+                            </div>
+                        </div>
+
                         <div>
                             <div class="flex items-center gap-3 mb-2">
-                                <div class="w-8 h-8 bg-slate-500 rounded-full flex items-center justify-center">
-                                    <img :src="upload.message.user.avatar_src" class="w-8 h-8 rounded-full" />
-                                </div>
                                 <div class="flex gap-3 justify-between items-center w-full">
                                     <div class="flex gap-3">
                                         <div class="text-xs">
-                                            Size: {{ (upload.size / 1000000).toFixed(2) }} MB
+                                            {{ file.room_file_type_name }}
                                         </div>
 
                                         <div class="text-xs">
-                                            {{ new Date(upload.created_at).toLocaleString() }}
+                                            Size: {{ file.size_mb }} MB
+                                        </div>
+
+                                        <div class="text-xs">
+                                            {{ new Date(file.created_at).toLocaleString() }}
                                         </div>
                                     </div>
 
-                                    <button @click="deleteUpload(upload.uuid)" v-if="isAdmin"
+
+                                    <button @click="deleteFile(file.uuid)" v-if="isAdmin"
                                         class="p-2 bg-red-500 hover:bg-red-600 rounded-md text-white">
                                         <!--!Font Awesome Free 6.6.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2024 Fonticons, Inc.-->
                                         <svg xmlns="http://www.w3.org/2000/svg" fill="white" width="11"
@@ -43,27 +55,29 @@
                                     </button>
                                 </div>
                             </div>
-
-                            <div class="flex flex-col gap-1 mb-2">
-                                <div class="text-xs">
-                                    {{ upload.message.user.username }}:
-                                </div>
-
-                                <div class="text-xs">
-                                    Message: {{ upload.message.body }}
-                                </div>
-
-
-                            </div>
                         </div>
+                        
 
-                        <MessageUpload :messageUpload="upload" />
+                        <div v-if="file.room_file_type_name === 'RoomAvatar'">
+                            <img :src="file.src" class="w-full rounded-md" />
+                        </div>
+                        <div v-else-if="file.room_file_type_name === 'ChannelAvatar'">
+                            <img :src="file.src" class="w-full rounded-md" />
+                        </div>
+                        <div v-else-if="file.room_file_type_name === 'ChannelWebhookAvatar'">
+                            <img :src="file.src" class="w-full rounded-md" />
+                        </div>
+                        <div v-else-if="file.room_file_type_name === 'ChannelMessageUpload' && file.channel_message_upload">
+                            <MessageUpload :messageUpload="getMessageUpload(file)" />
+                        </div>
+                        <div v-else>
+                            Unable to display file
+                        </div>
                     </div>
                 </div>
 
                 <div>
-                    <button @click="() => close()"
-                        class="p-2 bg-slate-500 hover:bg-slate-600 rounded-md text-white">
+                    <button @click="() => close()" class="p-2 bg-slate-500 hover:bg-slate-600 rounded-md text-white">
                         Close
                     </button>
                 </div>
@@ -74,9 +88,10 @@
 
 <script setup lang="ts">
 import MessageUpload from '@/components/MessageUpload.vue'
+import Avatar from './Avatar.vue'
 import { useRoomSelector } from '@/composables/useRoomSelector'
 import { useToast } from '@/composables/useToast'
-import { useChannel } from '@/composables/useChannel'
+import { useRoom } from '@/composables/useRoom'
 import { computed } from 'vue'
 
 const props = defineProps({
@@ -92,26 +107,36 @@ const props = defineProps({
 })
 
 const toastCtrl = useToast()
-const channelCtrl = useChannel()
 const roomSelector = useRoomSelector()
+const roomCtrl = useRoom()
 
-const messageUploads = computed(() => {
-    return roomSelector.messageUploads.value
+const roomFiles = computed(() => {
+    return roomSelector.roomFiles.value
 })
 
 const isAdmin = computed(() => {
     return roomSelector.hasRole('Admin')
 })
 
-const deleteUpload = async (uuid: string) => {
+const getMessageUpload = (file: any) => {
+    if (file.room_file_type_name === 'ChannelMessageUpload') {
+        return {
+            uuid: file.channel_message_upload.uuid,
+            channel_message_upload_type_name: file.channel_message_upload.channel_message_upload_type_name,
+            room_file: file
+        }
+    }
+}
+
+const deleteFile = async (uuid: string) => {
     try {
-        await channelCtrl.messageUploads.delete(uuid)
+        await roomCtrl.roomFiles.delete(uuid)
     } catch (error: any) {
         toastCtrl.add(error.message, 'error')
         return
     }
 
-    await roomSelector.reinitMessageUploads()
-    toastCtrl.add('Upload deleted', 'success')
+    await roomSelector.reinitRoomFiles()
+    toastCtrl.add('File deleted', 'success')
 }
 </script>

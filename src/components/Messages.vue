@@ -7,9 +7,11 @@ import { useChannelSelector } from '@/composables/useChannelSelector'
 import { useRoomSelector } from '@/composables/useRoomSelector'
 import { useUser } from '@/composables/useUser'
 import { useWebsocket } from '@/composables/useWebsocket'
+import { useRoom } from '@/composables/useRoom'
 import { ref, computed, onMounted } from 'vue'
 import { v4 as uuidv4 } from 'uuid';
 import type ChannelMessage from '@/models/channel_message'
+import Avatar from './Avatar.vue'
 
 const sub = useUser().getSub()
 const toastCtrl = useToast()
@@ -17,6 +19,7 @@ const channelCtrl = useChannel()
 const channelSelector = useChannelSelector()
 const roomSelector = useRoomSelector()
 const webSocket = useWebsocket()
+const roomCtrl = useRoom()
 
 const messageWrapper = ref(null as any)
 const showEmojiPicker = ref(false)
@@ -45,9 +48,10 @@ const isModerator = computed(() => {
 })
 
 webSocket.onChatMessage((data: any): void => {
-    if (data.message.channel_uuid === channel.value?.uuid) {
-        channelSelector.reinitChannelMessages()
-        scrollMessageWrapper()
+    if (data.payload.channel_uuid === channel.value?.uuid) {
+        channelSelector.reinitChannelMessages().then(() => {
+            scrollMessageWrapper()
+        })
     }
 })
 
@@ -116,6 +120,7 @@ const updateChannelMessage = async (): Promise<void> => {
     editChannelMessageBody.value = ''
     editChannelMessage.value = null
     channelSelector.reinitChannelMessages()
+    toastCtrl.add('Message updated', 'success')
 }
 
 const deleteChannelMessage = async (message: ChannelMessage): Promise<void> => {
@@ -126,6 +131,18 @@ const deleteChannelMessage = async (message: ChannelMessage): Promise<void> => {
         return
     }
     channelSelector.reinitChannelMessages()
+    toastCtrl.add('Message deleted', 'success')
+}
+
+const deleteChannelMessageUpload = async (room_file_uuid: string) => {
+    try {
+        await roomCtrl.roomFiles.delete(room_file_uuid)
+    } catch (error: any) {
+        toastCtrl.add(error.message, 'error')
+        return
+    }
+    channelSelector.reinitChannelMessages()
+    toastCtrl.add('File deleted', 'success')
 }
 
 const clearChannelMessageFileInput = (): void => {
@@ -153,10 +170,9 @@ onMounted(async () => {
                 <li v-for="message in channelMessages" :key="message.uuid">
                     <div class="flex items-start gap-3 w-full p-1 text-white text-sm rounded-md">
                         <div>
-                            <div
-                                class="text-xs rounded-full w-10 h-10 bg-indigo-700 flex items-center justify-center font-bold">
-
-                                <div v-if="message.created_by_system === 1">
+                            <div class="flex items-center justify-center">
+                                
+                                <div v-if="message.channel_message_type_name === 'System'">
                                     <!--!Font Awesome Free 6.6.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2024 Fonticons, Inc.-->
                                     <svg xmlns="http://www.w3.org/2000/svg" fill="white" width="16"
                                         viewBox="0 0 384 512">
@@ -164,21 +180,29 @@ onMounted(async () => {
                                             d="M40.1 467.1l-11.2 9c-3.2 2.5-7.1 3.9-11.1 3.9C8 480 0 472 0 462.2L0 192C0 86 86 0 192 0S384 86 384 192l0 270.2c0 9.8-8 17.8-17.8 17.8c-4 0-7.9-1.4-11.1-3.9l-11.2-9c-13.4-10.7-32.8-9-44.1 3.9L269.3 506c-3.3 3.8-8.2 6-13.3 6s-9.9-2.2-13.3-6l-26.6-30.5c-12.7-14.6-35.4-14.6-48.2 0L141.3 506c-3.3 3.8-8.2 6-13.3 6s-9.9-2.2-13.3-6L84.2 471c-11.3-12.9-30.7-14.6-44.1-3.9zM160 192a32 32 0 1 0 -64 0 32 32 0 1 0 64 0zm96 32a32 32 0 1 0 0-64 32 32 0 1 0 0 64z" />
                                     </svg>
                                 </div>
-                                <div v-else-if="!message?.user?.avatar_src">
-                                    {{ message?.user?.username.slice(0, 2).toUpperCase() }}
+                                <div v-else-if="message.channel_message_type_name === 'Webhook'">
+                                    <Avatar 
+                                        :src="message?.channel_webhook_message?.channel_webhook?.room_file?.src" 
+                                        :alternativeName="message?.channel_webhook_message?.channel_webhook?.name" 
+                                    />
                                 </div>
-                                <div v-else>
-                                    <img :src="message?.user?.avatar_src" class="w-10 h-10 rounded-full" />
+                                <div v-else-if="message.channel_message_type_name === 'User'">
+                                    <Avatar :src="message?.user?.avatar_src" :alternativeName="message?.user?.username" />
                                 </div>
-
                             </div>
                         </div>
                         <div class="w-full">
                             <div class="text-indigo-700 text-xs flex items-center gap-3 mb-1">
-                                <div v-if="message.created_by_system === 1" class="flex gap-2">
+                                <div v-if="message.channel_message_type_name === 'System'" class="flex gap-2">
                                     <div>The Friendly Ghost</div>
                                     <div class="text-xs text-gray-200 bg-indigo-500 px-1 rounded-md">
-                                        SYSTEM
+                                        {{ message.channel_message_type_name }}
+                                    </div>
+                                </div>
+                                <div v-if="message.channel_message_type_name === 'Webhook'" class="flex gap-2">
+                                    {{ message?.channel_webhook_message?.channel_webhook?.name }}
+                                    <div class="text-xs text-gray-200 bg-indigo-500 px-1 rounded-md">
+                                        BOT
                                     </div>
                                 </div>
                                 <div v-else>
@@ -197,10 +221,24 @@ onMounted(async () => {
                                     {{ message.body }}
                                 </div>
 
-                                <MessageUpload :messageUpload="message.upload" />
+                                <div class="relative" v-if="message.channel_message_upload">
+                                    <MessageUpload :messageUpload="message.channel_message_upload" />
+                                    <div v-if="message.user?.uuid === sub && message.channel_message_type_name === 'User' || isAdmin || isModerator"
+                                        class="absolute top-3 right-3">
+                                        <button @click="deleteChannelMessageUpload(message.channel_message_upload.room_file.uuid)"
+                                            class="p-2 text-xs rounded-md bg-red-700 hover:bg-red-600 text-white">
+                                            <!--!Font Awesome Free 6.6.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2024 Fonticons, Inc.-->
+                                            <svg xmlns="http://www.w3.org/2000/svg" fill="white" width="12" viewBox="0 0 448 512">
+                                                <path
+                                                    d="M170.5 51.6L151.5 80l145 0-19-28.4c-1.5-2.2-4-3.6-6.7-3.6l-93.7 0c-2.7 0-5.2 1.3-6.7 3.6zm147-26.6L354.2 80 368 80l48 0 8 0c13.3 0 24 10.7 24 24s-10.7 24-24 24l-8 0 0 304c0 44.2-35.8 80-80 80l-224 0c-44.2 0-80-35.8-80-80l0-304-8 0c-13.3 0-24-10.7-24-24S10.7 80 24 80l8 0 48 0 13.8 0 36.7-55.1C140.9 9.4 158.4 0 177.1 0l93.7 0c18.7 0 36.2 9.4 46.6 24.9zM80 128l0 304c0 17.7 14.3 32 32 32l224 0c17.7 0 32-14.3 32-32l0-304L80 128zm80 64l0 208c0 8.8-7.2 16-16 16s-16-7.2-16-16l0-208c0-8.8 7.2-16 16-16s16 7.2 16 16zm80 0l0 208c0 8.8-7.2 16-16 16s-16-7.2-16-16l0-208c0-8.8 7.2-16 16-16s16 7.2 16 16zm80 0l0 208c0 8.8-7.2 16-16 16s-16-7.2-16-16l0-208c0-8.8 7.2-16 16-16s16 7.2 16 16z" />
+                                            </svg>
+                                        </button>
+                                    </div>
+                                </div>
                             </div>
                         </div>
-                        <div v-if="message.user_uuid === sub && message.created_by_system === 0 || isAdmin || isModerator"
+            
+                        <div v-if="message.user?.uuid === sub && message.channel_message_type_name === 'User' || isAdmin || isModerator"
                             class="flex items-center justify-start gap-1">
                             <button @click="startEditChannelMessage(message)"
                                 class="p-2 text-xs rounded-md bg-indigo-700 hover:bg-indigo-600 focus:outline-none text-white">

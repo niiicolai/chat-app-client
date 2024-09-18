@@ -51,8 +51,13 @@ export function useAPI(): API {
             }
         );
 
+        if (response.status === 204) {
+            return {};
+        }
+
         if (!response.ok) {
             const res = await response.json();
+            
             const msg = `Error: ${res.error || response.statusText}`;            
             if (debug) console.error(msg);
             throw new Error(msg);

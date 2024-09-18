@@ -4,7 +4,7 @@ export default interface UserRoom {
     uuid: string;
     room_uuid: string;
     user_uuid: string;
-    room_role_name: string;
+    room_user_role_name: string;
     created_at: string;
     updated_at: string;
     user: User;

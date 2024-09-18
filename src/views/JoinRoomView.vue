@@ -17,11 +17,11 @@ const navigateTo = (): void => {
 
 onMounted(async () => {
     try {
-        const join = await roomCtrl.inviteLinks.join(uuid.value)
-        if (join) {
-            state.value = "joined"
-            result.value = join
-        }
+        await roomCtrl.inviteLinks.join(uuid.value)
+        const inviteLink = await roomCtrl.inviteLinks.findOne(uuid.value)
+        const room = await roomCtrl.findOne(inviteLink.room_uuid)
+        state.value = "joined"
+        result.value = room
     } catch (error: any) {
         if (error.message === 'Error: Already a member') {
             state.value = "already-joined"
@@ -53,13 +53,12 @@ onMounted(async () => {
                         Welcome to {{ result.name }} !
                     </div>
 
-                    <div v-if="result.avatar_src" class="w-72 mb-3 text-center rounded-md p-3 bg-slate-500 mb-3"
+                    <div v-if="result.avatar.room_file" class="w-72 h-16 mb-3 text-center rounded-md p-3 bg-slate-500 mb-3"
                         :style="{ 
-                            backgroundImage: `url(${result.avatar_src})`,
+                            backgroundImage: `url(${result.avatar.room_file.src})`,
                             backgroundSize: 'cover',
                             backgroundPosition: 'center' 
                         }">
-                    >
                     </div>
 
                     <div class="w-72 mb-3 text-center rounded-md p-3 bg-slate-500 mb-3">

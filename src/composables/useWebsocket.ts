@@ -22,7 +22,10 @@ export function useWebsocket() : UseWebsocket {
         if (data.error) {
             toast.add('WebSocket error: ' + data.error, 'error');
             return;
-        } else if (data.type === 'chat_message') {
+        } else if (data.type === 'chat_message_created' ||
+            data.type === 'chat_message_updated' ||
+            data.type === 'chat_message_deleted'
+        ) {
             onChatMessageCallbacks.forEach(cb => cb(data));
         }
     };

@@ -27,19 +27,53 @@ const crudAPI = api.crudAPI('user', 'users', {
     delete: true
 }) as Users;
 
+// override the default update
+
+const localStorageKey = import.meta.env.VITE_API_LOCAL_STORAGE_KEY;
+crudAPI.update = async (id: string, data: any, form: any): Promise<object> => {
+    if (form) {
+        const formData = new FormData(form);
+        const API_URL = import.meta.env.VITE_API_URL;
+        const token = localStorage.getItem(import.meta.env.VITE_API_LOCAL_STORAGE_KEY);
+        const response = await fetch(`${API_URL}/user/me`, {
+            method: 'PATCH',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+            },
+            body: formData
+        });
+
+        if (!response.ok) {
+            const res = await response.json();
+            const msg = `Error: ${res.error || response.statusText}`;
+            throw new Error(msg);
+        }
+        const json = await response.json();
+        if (json.token) {
+            localStorage.setItem(localStorageKey, json.token);
+        }
+        return json;
+    }
+
+    return api.fetchAPI(`/user/me`,
+        { method: 'PATCH', body: JSON.stringify(data) },
+        true
+    );
+}
+
 const login = async (data: any): Promise<object> => {
     if (!data.email || !data.password) {
         throw new Error('email and password are required');
     }
 
-    return api.fetchAPI('/login',
+    return api.fetchAPI('/user/login',
         { method: 'POST', body: JSON.stringify(data) },
         false
     );
 };
 
 const me = async (): Promise<object> => {
-    return api.fetchAPI('/me',
+    return api.fetchAPI('/user/me',
         { method: 'GET' },
         true
     );

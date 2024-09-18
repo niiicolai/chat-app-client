@@ -4,9 +4,12 @@ import { useChannelSelector } from '@/composables/useChannelSelector'
 import { useChannelTypes } from '@/composables/useChannelTypes'
 import { useRoomSelector } from '@/composables/useRoomSelector'
 import { useChannel } from '@/composables/useChannel'
+import { useRoom } from '@/composables/useRoom'
 import { useToast } from '@/composables/useToast'
 import { ref, computed } from 'vue'
+import { v4 as uuidv4 } from 'uuid'
 
+const roomCtrl = useRoom()
 const toastCtrl = useToast()
 const channelCtrl = useChannel()
 const channelSelector = useChannelSelector()
@@ -33,11 +36,13 @@ const channelTypes = computed(() => {
     return channelTypesCtrl.channelTypes.value
 })
 
+const newChannelForm = ref(null as any)
 const newChannel = ref(false)
 const channelName = ref('')
 const channelDescription = ref('')
 const channelType = ref('')
 
+const editChannelForm = ref(null as any)
 const editChannel = ref(null as Channel | null)
 const editChannelName = ref('')
 const editChannelDescription = ref('')
@@ -69,12 +74,7 @@ const createChannel = async () => {
     }
 
     try {
-        await channelCtrl.create({
-            name: channelName.value,
-            description: channelDescription.value,
-            channel_type_name: channelType.value,
-            room_uuid: roomSelector.room.value?.uuid
-        })
+        await channelCtrl.create({}, newChannelForm.value)
     } catch (error: any) {
         toastCtrl.add(error.message, 'error')
         return
@@ -108,12 +108,7 @@ const updateChannel = async () => {
     }
 
     try {
-        await channelCtrl.update(editChannel.value?.uuid, {
-            name: editChannelName.value,
-            description: editChannelDescription.value,
-            channel_type_name: editChannelType.value,
-            room_uuid: roomSelector.room.value?.uuid
-        })
+        await channelCtrl.update(editChannel.value?.uuid, {}, editChannelForm.value)
     } catch (error: any) {
         toastCtrl.add(error.message, 'error')
         return
@@ -140,6 +135,18 @@ const deleteChannel = async (channel: Channel) => {
     channelSelector.reinit()
 }
 
+const deleteChannelAvatarFile = async (room_file_uuid: string) => {
+    try {
+        await roomCtrl.roomFiles.delete(room_file_uuid)
+    } catch (error: any) {
+        toastCtrl.add(error.message, 'error')
+        return
+    }
+    editChannel.value = null
+    await channelSelector.reinit()
+    toastCtrl.add('Channel Avatar deleted', 'success')
+}
+
 </script>
 
 <template>
@@ -157,50 +164,64 @@ const deleteChannel = async (channel: Channel) => {
                     </p>
                 </div>
 
-                <div class="border-b border-gray-800 pb-3 mb-3 flex flex-col gap-2">
-                    <div>
-                        <label for="name" class="block">Name</label>
-                        <small class="mb-1 block">
-                            Used to identify the channel.
-                        </small>
-                        <input v-model="channelName" placeholder="Name"
-                            class="w-full p-2 border border-gray-300 rounded-md text-black" />
+                <form ref="newChannelForm" class="w-full" @submit.prevent="createChannel()">
+                    <input type="hidden" name="uuid" :value="uuidv4()" />
+                    <input type="hidden" name="room_uuid" :value="roomSelector?.room?.value?.uuid" />
+
+                    <div class="border-b border-gray-800 pb-3 mb-3 flex flex-col gap-2">
+                        <div>
+                            <label for="name" class="block">Name</label>
+                            <small class="mb-1 block">
+                                Used to identify the channel.
+                            </small>
+                            <input v-model="channelName" placeholder="Name" name="name"
+                                class="w-full p-2 border border-gray-300 rounded-md text-black" />
+                        </div>
+
+                        <div>
+                            <label for="description" class="block">Description</label>
+                            <small class="mb-1 block">
+                                Describe the purpose of the channel.
+                            </small>
+                            <textarea v-model="channelDescription" placeholder="Description" name="description"
+                                class="w-full p-2 border border-gray-300 rounded-md text-black h-24" />
+                        </div>
+
+                        <div>
+                            <label for="description" class="font-bold block">Avatar</label>
+                            <small class="mb-1 block text-sm">
+                                Upload an image to represent the channel.
+                            </small>
+                            <input type="file" placeholder="avatar" name="file"
+                                class="w-full p-2 border border-gray-300 rounded-md text-white" />
+                        </div>
+
+                        <div>
+                            <label for="channelType" class="block">Type</label>
+                            <small class="mb-1 block">
+                                Select the type of channel.
+                            </small>
+                            <select v-model="channelType" name="channel_type_name"
+                                class="w-full p-2 border border-gray-300 rounded-md text-black">
+                                <option v-for="channelType in channelTypes" :key="channelType.name"
+                                    :value="channelType.name">
+                                    {{ channelType.name }}
+                                </option>
+                            </select>
+                        </div>
+
                     </div>
 
                     <div>
-                        <label for="description" class="block">Description</label>
-                        <small class="mb-1 block">
-                            Describe the purpose of the channel.
-                        </small>
-                        <textarea v-model="channelDescription" placeholder="Description"
-                            class="w-full p-2 border border-gray-300 rounded-md text-black h-24" />
+                        <button type="submit" class="p-2 mr-2 bg-indigo-500 hover:bg-indigo-600 rounded-md text-white">
+                            Create Channel
+                        </button>
+                        <button @click="newChannel = false" type="button"
+                            class="p-2 bg-slate-500 hover:bg-slate-600 rounded-md text-white">
+                            Cancel
+                        </button>
                     </div>
-
-                    <div>
-                        <label for="channelType" class="block">Type</label>
-                        <small class="mb-1 block">
-                            Select the type of channel.
-                        </small>
-                        <select v-model="channelType" class="w-full p-2 border border-gray-300 rounded-md text-black">
-                            <option v-for="channelType in channelTypes" :key="channelType.name"
-                                :value="channelType.name">
-                                {{ channelType.name }}
-                            </option>
-                        </select>
-                    </div>
-
-                </div>
-
-                <div>
-                    <button @click="createChannel()"
-                        class="p-2 mr-2 bg-indigo-500 hover:bg-indigo-600 rounded-md text-white">
-                        Create Channel
-                    </button>
-                    <button @click="newChannel = false"
-                        class="p-2 bg-slate-500 hover:bg-slate-600 rounded-md text-white">
-                        Cancel
-                    </button>
-                </div>
+                </form>
             </div>
         </div>
 
@@ -217,50 +238,75 @@ const deleteChannel = async (channel: Channel) => {
                     </p>
                 </div>
 
-                <div class="border-b border-gray-800 pb-3 mb-3 flex flex-col gap-2">
-                    <div>
-                        <label for="name" class="block">Name</label>
-                        <small class="mb-1 block">
-                            Used to identify the channel.
-                        </small>
-                        <input v-model="editChannelName" :placeholder="editChannel.name"
-                            class="w-full p-2 border border-gray-300 rounded-md text-black" />
+                <form ref="editChannelForm" class="w-full" @submit.prevent="updateChannel()">
+                    <div class="border-b border-gray-800 pb-3 mb-3 flex flex-col gap-2">
+                        <div>
+                            <label for="name" class="block">Name</label>
+                            <small class="mb-1 block">
+                                Used to identify the channel.
+                            </small>
+                            <input v-model="editChannelName" :placeholder="editChannel.name" name="name"
+                                class="w-full p-2 border border-gray-300 rounded-md text-black" />
+                        </div>
+
+                        <div>
+                            <label for="description" class="block">Description</label>
+                            <small class="mb-1 block">
+                                Describe the purpose of the channel.
+                            </small>
+                            <textarea v-model="editChannelDescription" :placeholder="editChannel.description"
+                                name="description"
+                                class="w-full p-2 border border-gray-300 rounded-md text-black h-24" />
+                        </div>
+
+                        <div>
+                            <label for="description" class="font-bold block">Avatar</label>
+                            <small class="mb-1 block text-sm">
+                                Upload an image to represent the room.
+                            </small>
+                            <input type="file" placeholder="avatar" name="file"
+                                class="w-full p-2 border border-gray-300 rounded-md text-white" />
+                            <div v-if="editChannel?.room_file" class="flex items-center gap-2 mt-2">
+                                <img :src="editChannel.room_file.src" class="w-12 h-12 rounded-full" />
+                                <button @click="deleteChannelAvatarFile(editChannel.room_file.uuid)" type="button"
+                                    title="Delete Avatar" class="p-2 bg-red-500 hover:bg-red-600 rounded-md text-white">
+                                    <!--!Font Awesome Free 6.6.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2024 Fonticons, Inc.-->
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="white" width="11"
+                                        viewBox="0 0 448 512">
+                                        <path
+                                            d="M170.5 51.6L151.5 80l145 0-19-28.4c-1.5-2.2-4-3.6-6.7-3.6l-93.7 0c-2.7 0-5.2 1.3-6.7 3.6zm147-26.6L354.2 80 368 80l48 0 8 0c13.3 0 24 10.7 24 24s-10.7 24-24 24l-8 0 0 304c0 44.2-35.8 80-80 80l-224 0c-44.2 0-80-35.8-80-80l0-304-8 0c-13.3 0-24-10.7-24-24S10.7 80 24 80l8 0 48 0 13.8 0 36.7-55.1C140.9 9.4 158.4 0 177.1 0l93.7 0c18.7 0 36.2 9.4 46.6 24.9zM80 128l0 304c0 17.7 14.3 32 32 32l224 0c17.7 0 32-14.3 32-32l0-304L80 128zm80 64l0 208c0 8.8-7.2 16
+                                            -16 16s-16-7.2-16-16l0-208c0-8.8 7.2-16 16-16s16 7.2 16 16zm80 0l0 208c0 8.8-7.2 16-16 16s-16-7.2-16-16l0-208c0-8.8 7.2-16 16-16s16 7.2 16 16zm80 0l0 208c0 8.8-7.2 16-16 16s-16-7.2-16-16l0-208c0-8.8 7.2-16 16-16s16 7.2 16 16z" />
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+
+
+                        <div>
+                            <label for="channelType" class="block">Type</label>
+                            <small class="mb-1 block">
+                                Select the type of channel.
+                            </small>
+                            <select v-model="editChannelType" name="channel_type_name"
+                                class="w-full p-2 border border-gray-300 rounded-md text-black">
+                                <option v-for="channelType in channelTypes" :key="channelType.name"
+                                    :value="channelType.name">
+                                    {{ channelType.name }}
+                                </option>
+                            </select>
+                        </div>
                     </div>
 
                     <div>
-                        <label for="description" class="block">Description</label>
-                        <small class="mb-1 block">
-                            Describe the purpose of the channel.
-                        </small>
-                        <textarea v-model="editChannelDescription" :placeholder="editChannel.description"
-                            class="w-full p-2 border border-gray-300 rounded-md text-black h-24" />
+                        <button type="submit" class="p-2 mr-2 bg-indigo-500 hover:bg-indigo-600 rounded-md text-white">
+                            Update Channel
+                        </button>
+                        <button @click="editChannel = null" type="button"
+                            class="p-2 bg-slate-500 hover:bg-slate-600 rounded-md text-white">
+                            Cancel
+                        </button>
                     </div>
-
-                    <div>
-                        <label for="channelType" class="block">Type</label>
-                        <small class="mb-1 block">
-                            Select the type of channel.
-                        </small>
-                        <select v-model="editChannelType"
-                            class="w-full p-2 border border-gray-300 rounded-md text-black">
-                            <option v-for="channelType in channelTypes" :key="channelType.name"
-                                :value="channelType.name">
-                                {{ channelType.name }}
-                            </option>
-                        </select>
-                    </div>
-                </div>
-
-                <div>
-                    <button @click="updateChannel()"
-                        class="p-2 mr-2 bg-indigo-500 hover:bg-indigo-600 rounded-md text-white">
-                        Update Channel
-                    </button>
-                    <button @click="editChannel = null"
-                        class="p-2 bg-slate-500 hover:bg-slate-600 rounded-md text-white">
-                        Cancel
-                    </button>
-                </div>
+                </form>
             </div>
         </div>
 
@@ -335,7 +381,13 @@ const deleteChannel = async (channel: Channel) => {
                         <li v-for="channel in channels" :key="channel.uuid">
                             <button @click="showChannel(channel)"
                                 class="shadow-md bg-indigo-700 hover:bg-slate-500 focus:outline-none rounded-md overflow-hidden w-full h-12 flex items-center justify-start gap-2 p-3"
-                                :class="{ 'bg-slate-500': channel && channelSelector.channel.value && channel.uuid === channelSelector.channel.value.uuid }">
+                                :class="{
+                                    'bg-slate-500': channel && channelSelector.channel.value && channel.uuid === channelSelector.channel.value.uuid,
+                                }" :style="{
+                                        'background-image': channel.room_file ? 'url(' + channel.room_file.src + ')' : 'none',
+                                        'background-size': 'cover',
+                                        'background-position': 'center',
+                                    }">
 
                                 <div v-if="channel.channel_type_name === 'Text'" class="">
                                     <!--!Font Awesome Free 6.6.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2024 Fonticons, Inc.-->
@@ -345,20 +397,12 @@ const deleteChannel = async (channel: Channel) => {
                                             d="M181.3 32.4c17.4 2.9 29.2 19.4 26.3 36.8L197.8 128l95.1 0 11.5-69.3c2.9-17.4 19.4-29.2 36.8-26.3s29.2 19.4 26.3 36.8L357.8 128l58.2 0c17.7 0 32 14.3 32 32s-14.3 32-32 32l-68.9 0L325.8 320l58.2 0c17.7 0 32 14.3 32 32s-14.3 32-32 32l-68.9 0-11.5 69.3c-2.9 17.4-19.4 29.2-36.8 26.3s-29.2-19.4-26.3-36.8l9.8-58.7-95.1 0-11.5 69.3c-2.9 17.4-19.4 29.2-36.8 26.3s-29.2-19.4-26.3-36.8L90.2 384 32 384c-17.7 0-32-14.3-32-32s14.3-32 32-32l68.9 0 21.3-128L64 192c-17.7 0-32-14.3-32-32s14.3-32 32-32l68.9 0 11.5-69.3c2.9-17.4 19.4-29.2 36.8-26.3zM187.1 192L165.8 320l95.1 0 21.3-128-95.1 0z" />
                                     </svg>
                                 </div>
-                                <div v-if="channel.channel_type_name === 'Voice'" class="">
+                                <div v-if="channel.channel_type_name === 'Call'" class="">
                                     <!--!Font Awesome Free 6.6.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2024 Fonticons, Inc.-->
                                     <svg xmlns="http://www.w3.org/2000/svg" width="10" fill="white"
                                         viewBox="0 0 384 512">
                                         <path
                                             d="M192 0C139 0 96 43 96 96l0 160c0 53 43 96 96 96s96-43 96-96l0-160c0-53-43-96-96-96zM64 216c0-13.3-10.7-24-24-24s-24 10.7-24 24l0 40c0 89.1 66.2 162.7 152 174.4l0 33.6-48 0c-13.3 0-24 10.7-24 24s10.7 24 24 24l72 0 72 0c13.3 0 24-10.7 24-24s-10.7-24-24-24l-48 0 0-33.6c85.8-11.7 152-85.3 152-174.4l0-40c0-13.3-10.7-24-24-24s-24 10.7-24 24l0 40c0 70.7-57.3 128-128 128s-128-57.3-128-128l0-40z" />
-                                    </svg>
-                                </div>
-                                <div v-if="channel.channel_type_name === 'Video'" class="">
-                                    <!--!Font Awesome Free 6.6.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2024 Fonticons, Inc.-->
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="12" fill="white"
-                                        viewBox="0 0 576 512">
-                                        <path
-                                            d="M0 128C0 92.7 28.7 64 64 64l256 0c35.3 0 64 28.7 64 64l0 256c0 35.3-28.7 64-64 64L64 448c-35.3 0-64-28.7-64-64L0 128zM559.1 99.8c10.4 5.6 16.9 16.4 16.9 28.2l0 256c0 11.8-6.5 22.6-16.9 28.2s-23 5-32.9-1.6l-96-64L416 337.1l0-17.1 0-128 0-17.1 14.2-9.5 96-64c9.8-6.5 22.4-7.2 32.9-1.6z" />
                                     </svg>
                                 </div>
 

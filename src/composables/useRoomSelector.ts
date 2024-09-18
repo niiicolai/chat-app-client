@@ -6,7 +6,7 @@ import { useChannelSelector } from './useChannelSelector'
 import type Room from '@/models/room'
 import type UserRoom from '@/models/user_room'
 import type RoomInviteLink from '@/models/room_invite_link'
-import type MessageUpload from '@/models/message_upload'
+import type RoomFile from '@/models/room_file'
 import type Webhook from '@/models/channel_webhook' 
 
 const roomCtrl = useRoom()
@@ -18,7 +18,7 @@ const room = ref(null as Room | null)
 const userRooms = ref([] as UserRoom[])
 const userRoom = ref(null as UserRoom | null)
 const inviteLinks = ref([] as RoomInviteLink[])
-const messageUploads = ref([] as MessageUpload[])
+const roomFiles = ref([] as RoomFile[])
 const webhooks = ref([] as Webhook[])
 const displayLinks = ref(false)
 const displayWebhooks = ref(false)
@@ -27,7 +27,7 @@ interface RoomSelector {
     room: Ref<Room | null>;
     rooms: Ref<Room[]>;
     inviteLinks: Ref<RoomInviteLink[]>;
-    messageUploads: Ref<MessageUpload[]>;
+    roomFiles: Ref<RoomFile[]>;
     userRooms: Ref<UserRoom[]>;
     userRoom: Ref<UserRoom | null>;
     setRoom: (newRoom: Room | null) => Promise<void>;
@@ -36,7 +36,7 @@ interface RoomSelector {
     webhooks: Ref<Webhook[]>;
     setWebhooks: (newRoom: Room | null) => Promise<void>;
     reInitRoom: () => Promise<void>;
-    reinitMessageUploads: () => Promise<void>;
+    reinitRoomFiles: () => Promise<void>;
     reinitWebhooks: () => Promise<void>;
     reinitUserRooms: () => Promise<void>;
     hasRole: (role: string) => boolean;
@@ -71,7 +71,7 @@ export function useRoomSelector() : RoomSelector {
 
         room.value = await roomCtrl.findOne(newRoom.uuid)
 
-        await setMessageUploads(newRoom)
+        await setRoomFiles(newRoom)
         await setUserRooms(newRoom)
         await setInviteLinks(newRoom)
         await channelSelector.setRoom(newRoom)
@@ -86,13 +86,11 @@ export function useRoomSelector() : RoomSelector {
         }
 
         const sub = userCtrl.getSub()
-        const { data: userRoomsData } = await roomCtrl.userRooms.findAll({
-            room_uuid: newRoom.uuid
-        }) as { data: UserRoom[] }
+        const { data } = await roomCtrl.userRooms.findAll({ room_uuid: newRoom.uuid }) as { data: UserRoom[] }
 
-        if (userRoomsData && userRoomsData.length > 0) {
-            userRooms.value = userRoomsData
-            userRoom.value = userRoomsData.find(userRoom => userRoom.user_uuid === sub) || null
+        if (data && data.length > 0) {
+            userRooms.value = data
+            userRoom.value = data.find(roomUser => roomUser.user.uuid === sub) || null
         } else {
             userRooms.value = []
             userRoom.value = null
@@ -112,17 +110,17 @@ export function useRoomSelector() : RoomSelector {
         inviteLinks.value = roomInviteLinksData
     }
 
-    async function setMessageUploads(newRoom: Room | null) : Promise<void> {
+    async function setRoomFiles(newRoom: Room | null) : Promise<void> {
         if (!newRoom || !newRoom.uuid) {
-            messageUploads.value = []
+            roomFiles.value = []
             return
         }
 
-        const { data: messageUploadsData } = await channelCtrl
-            .messageUploads
-            .findAll({ room_uuid: newRoom.uuid }) as { data: MessageUpload[] }
+        const { data } = await roomCtrl
+            .roomFiles
+            .findAll({ room_uuid: newRoom.uuid }) as { data: RoomFile[] }
 
-        messageUploads.value = messageUploadsData
+        roomFiles.value = data
     }
 
     async function setWebhooks(newRoom: Room | null) : Promise<void> {
@@ -156,9 +154,9 @@ export function useRoomSelector() : RoomSelector {
         }
     }
 
-    async function reinitMessageUploads() : Promise<void> {
+    async function reinitRoomFiles() : Promise<void> {
         if (room.value) {
-            setMessageUploads(room.value)
+            setRoomFiles(room.value)
         }
     }
 
@@ -170,7 +168,7 @@ export function useRoomSelector() : RoomSelector {
 
     const hasRole = (role: string) : boolean => {
         if (!userRoom.value) return false
-        return userRoom.value.room_role_name === role
+        return userRoom.value.room_user_role_name === role
     }
 
     const toggleDisplayLinks = () : void => {
@@ -185,7 +183,7 @@ export function useRoomSelector() : RoomSelector {
         room,
         rooms,
         inviteLinks,
-        messageUploads,
+        roomFiles,
         userRooms,
         userRoom,
         setRoom,
@@ -194,7 +192,7 @@ export function useRoomSelector() : RoomSelector {
         webhooks,
         setWebhooks,
         reInitRoom,
-        reinitMessageUploads,
+        reinitRoomFiles,
         reinitWebhooks,
         reinitUserRooms,
         hasRole,

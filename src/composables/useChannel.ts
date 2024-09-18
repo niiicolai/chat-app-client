@@ -54,7 +54,7 @@ const messages = {
 } as Messages;
 
 const messageUploads = {
-    ...api.crudAPI('message_upload', 'message_uploads', {
+    ...api.crudAPI('channel_message_upload', 'channel_message_uploads', {
         findAll: true,
         findOne: true,
         template: false,
@@ -75,7 +75,7 @@ const messageUploads = {
 } as MessageUploads;
 
 const uploadTypes = {
-    ...api.crudAPI('upload_type', 'upload_types', {
+    ...api.crudAPI('channel_message_upload_type', 'channel_message_upload_types', {
         findAll: false,
         findOne: false,
         template: false,
