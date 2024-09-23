@@ -1,35 +1,117 @@
-# chat-app-client
+# Chat App Vue+TypeScript
+A Vue.js SPA made for the chat backend application found at https://github.com/niiicolai/chat-app.
 
-This template should help get you started developing with Vue 3 in Vite.
+![example](example.png)
 
-## Recommended IDE Setup
+## Features
+- Mobile
+    - Responsive [ ]
+- CSS Styles
+    - Tailwind CSS [x]
+- User
+    - Login [x]
+    - Registration [x]
+    - Logout [x]
+    - Edit Profile [x]
+    - Delete Avatar [x]
+    - Google Registration+Login [ ]
+- Room
+    - Create [x]
+    - Update [x]
+    - Delete [x]
+    - List [x]
+    - Select [x]
+    - Leave [x]
+    - EditSettings [x]
+    - Delete Avatar [x]
+    - Total File Usage Overview [x]
+    - Channel Usage Overview [x]
+    - Room User Usage Overview [x]
+    - File Retention Overview [x]
+    - Message Retention Overview [x]
+    - Display Rules Text [x]
+    - Pagination [ ]
+- Room Invite Link
+    - Create [x]
+    - Update [x]
+    - Delete [x]
+    - List [x]
+    - Join [x]
+    - Pagination [ ]
+- Room Files
+    - List [x]
+    - Delete [x]
+    - Pagination [ ]
+- Room Users
+    - Set to Admin [x]
+    - Set to Moderator [x]
+    - Set to Member [x]
+    - Kick [x]
+    - Client Role Check [x]
+    - Pagination [ ]
+- Channel
+    - Create [x]
+    - Update [x]
+    - Delete [x]
+    - List [x]
+    - Delete Avatar [x]
+    - Pagination [ ]
+- Channel Webhook
+    - Create [x]
+    - Update [x]
+    - Delete [x]
+    - List [x]
+    - Send Test Message [x]
+    - Delete Avatar [x]
+    - Pagination [ ]
+- Channel Message
+    - Create [x]
+    - Update [x]
+    - Delete [x]
+    - List [x]
+    - Add File [x]
+    - Delete File [x]
+    - Scroll To Bottom Event [x]
+    - Infinite Scroll [ ]
+- Toast
+    - Create [x]
+    - List [x]
+    - Delete [x]
+- Websocket
+    - Connect [x]
+    - Join Channel [x]
+    - Handle Message Events [x]
+- Logging
+    - Exceptions [ ]
+- Testing
+    - end2end tests [ ]
+- Routing
+    - Vue Router [x]
+    - Sitemap [ ]
+- CI/CD
+    - GitHub Actions [x]
+    - GitHub Secrets [x]
+- Deployment
+    - DigitalOcean [x]
 
-[VSCode](https://code.visualstudio.com/) + [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (and disable Vetur).
 
-## Type Support for `.vue` Imports in TS
+## Development Environment Setup
+The following are the steps to set up the development environment for the chat client.
 
-TypeScript cannot handle type information for `.vue` imports by default, so we replace the `tsc` CLI with `vue-tsc` for type checking. In editors, we need [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) to make the TypeScript language service aware of `.vue` types.
-
-## Customize configuration
-
-See [Vite Configuration Reference](https://vitejs.dev/config/).
-
-## Project Setup
-
-```sh
+### Install
+```
 npm install
+cp .env.example .env
 ```
 
-### Compile and Hot-Reload for Development
-
-```sh
+### Run
+```
 npm run dev
 ```
 
-### Type-Check, Compile and Minify for Production
-
-```sh
-npm run build
+### Test 
+```
+npm test
 ```
 
 ### Run Headed Component Tests with [Cypress Component Testing](https://on.cypress.io/component)
@@ -42,14 +124,4 @@ npm run test:unit:dev # or `npm run test:unit` for headless testing
 
 ```sh
 npm run test:e2e:dev
-```
-
-This runs the end-to-end tests against the Vite development server.
-It is much faster than the production build.
-
-But it's still recommended to test the production build with `test:e2e` before deploying (e.g. in CI environments):
-
-```sh
-npm run build
-npm run test:e2e
 ```
