@@ -1,5 +1,5 @@
 
 export default interface RoomChannelSettings {
-    maxChannels: number;
-    messagesDaysToLive: number;
+    max_channels: number;
+    message_days_to_live: number;
 }

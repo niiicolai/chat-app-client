@@ -1,5 +1,5 @@
 
 export default interface RoomJoinSettings {
-    channelUuid: string;
-    message: string;
+    join_channel_uuid: string;
+    join_message: string;
 }

@@ -65,9 +65,9 @@ const roomCategories = computed(() => {
 
 const startEditRoomSettings = async (room: Room): Promise<void> => {
     editRoomSettings.value = room
-    joinChannel.value = room.joinSettings.channelUuid
-    joinMessage.value = room.joinSettings.message
-    rulesText.value = room.rulesSettings.text
+    joinChannel.value = room.joinSettings.join_channel_uuid
+    joinMessage.value = room.joinSettings.join_message
+    rulesText.value = room.rulesSettings.rules_text
 }
 
 const startEditRoom = (room: Room): void => {
@@ -249,7 +249,7 @@ onMounted(async () => {
 
                 <div class="border-b border-gray-800 pb-3 mb-3 flex flex-col gap-2">
                     <div>
-                        {{ room?.rulesSettings.text }}
+                        {{ room?.rulesSettings.rules_text }}
                     </div>
                 </div>
 
@@ -281,7 +281,7 @@ onMounted(async () => {
                             Max Channels
                         </div>
                         <div>
-                            {{ editRoomSettings.channelSettings.maxChannels }}
+                            {{ editRoomSettings.channelSettings.max_channels }}
                         </div>
                     </div>
                     <div class="text-md flex gap-3 items-center justify-between bg-gray-800 p-3 mb-1">
@@ -289,7 +289,7 @@ onMounted(async () => {
                             Max Members
                         </div>
                         <div>
-                            {{ editRoomSettings.userSettings.maxUsers }}
+                            {{ editRoomSettings.userSettings.max_users }}
                         </div>
                     </div>
                     <div class="text-md flex gap-3 items-center justify-between bg-gray-800 p-3 mb-1">
@@ -297,7 +297,7 @@ onMounted(async () => {
                             Message Retention Days
                         </div>
                         <div>
-                            {{ editRoomSettings.channelSettings.messagesDaysToLive }}
+                            {{ editRoomSettings.channelSettings.message_days_to_live }}
                         </div>
                     </div>
                     <div class="text-md flex gap-3 items-center justify-between bg-gray-800 p-3 mb-1">
@@ -305,7 +305,7 @@ onMounted(async () => {
                             Message Upload Retention Days
                         </div>
                         <div>
-                            {{ editRoomSettings.fileSettings.fileDaysToLive }}
+                            {{ editRoomSettings.fileSettings.file_days_to_live }}
                         </div>
                     </div>
                     <div class="text-md flex gap-3 items-center justify-between bg-gray-800 p-3 mb-1">
@@ -313,7 +313,7 @@ onMounted(async () => {
                             Total File Upload Size
                         </div>
                         <div>
-                            {{ editRoomSettings.mb_used }} / {{ editRoomSettings.fileSettings.totalFilesMb }} MB
+                            {{ editRoomSettings.mb_used }} / {{ editRoomSettings.fileSettings.total_files_mb }} MB
                         </div>
                     </div>
                     <div class="text-md flex gap-3 items-center justify-between bg-gray-800 p-3 mb-3">
@@ -321,7 +321,7 @@ onMounted(async () => {
                             Single File Upload Size
                         </div>
                         <div>
-                            {{ editRoomSettings.fileSettings.singleFileMb }} MB
+                            {{ editRoomSettings.fileSettings.single_file_mb }} MB
                         </div>
                     </div>
                 </div>

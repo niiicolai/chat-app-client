@@ -1,4 +1,4 @@
 
 export default interface RoomUserSettings {
-    maxUsers: number;
+    max_users: number;
 }
